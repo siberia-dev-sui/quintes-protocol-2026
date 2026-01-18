@@ -1,97 +1,215 @@
-# Quintes Protocol - Neo V6 (Experimental)
+# 🌟 Quintes Protocol - Official Website
 
-![Quintes Protocol Hero](images/661fa8c48456bfac79f572e2_Hero%20Left.webp)
+> Institutional Grade Yield. Engineered for Consistent 33% APY Growth.
 
-> **Sustainable Crypto Yields up to 33% APY.**  
-> Built for long-term capital preservation, Quintes Protocol integrates institutional-grade financial engineering with the power of decentralized technologies.
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 
-## 🚀 Overview
+## 📖 Overview
 
-**Quintes Protocol Neo V6** represents the latest evolution in our frontend interface, combining a pixel-perfect, high-fidelity aesthetic with robust Web3 functionality. This experimental release focuses on demonstrating seamless user onboarding via **iExec Web3 Mail** integration, allowing for privacy-preserving, wallet-based whitelist registration.
+Quintes Protocol is a next-generation DeFi protocol offering sustainable, engineered crypto yields through a mathematically sound, overcollateralized stable asset: **QNT**.
 
-### Key Features
-
-*   **Premium UI/UX**: A dark-mode, glassmorphism-inspired design system built with clean HTML5 and CSS3.
-*   **Web3 Integration**: Native MetaMask connectivity via `ethers.js`.
-*   **Privacy-First Whitelist**: Integrated **iExec Confidential Computing** logic to allow users to join the alpha whitelist without exposing their email addresses publicly on-chain.
-*   **Arbitrum Sepolia Ready**: Pre-configured to interact with the Arbitrum Sepolia testnet for low-cost, high-speed transactions.
-
----
-
-## 🛠 Tech Stack
-
-*   **Frontend**: Static HTML5, CSS3, Vanilla JavaScript (ES6+).
-*   **Web3**: `ethers.js` (v5.7.2) for blockchain interaction.
-*   **Integration**: iExec SDK (Confidential Computing & Web3 Mail).
-*   **Styling**: Custom Webflow-derived CSS with responsive layouts.
+This repository contains the official landing page showcasing:
+- 🎯 **33% APY Target** - Consistent, predictable returns
+- 🔒 **200% Overcollateralization** - Maximum security with Automated Proof of Collateral (APoC)
+- ✅ **Shariah-Compliant** - Reviewed by Islamic scholars
+- 📊 **Performance Charts** - Real-time market comparisons
+- 🌐 **Multi-Asset Support** - BTC, ETH, USDC, USDT deposits
 
 ---
 
-## 🔌 Connection & Whitelist Flow
+## 🚀 Features
 
-The application implements a custom Web3 Connection Manager (`js/web3-connect.js`) that handles the user journey:
+### Core Sections
 
-1.  **Wallet Detection**: Automatically detects MetaMask injection.
-2.  **Connection Request**: Prompts user to connect their wallet.
-3.  **Network Enforce**: automatically checks and requests a switch to **Arbitrum Sepolia** (Chain ID: 421614) if the user is on the wrong network.
-4.  **Authenticated UI**: Upon successful connection, the "Connect Wallet" button transforms to show the user's shortened address and unlocks the **Verified Alpha Access** form.
-5.  **iExec Submission**: (Mocked in this frontend release) Securely prepares the user's email for encryption and submission via iExec's Data Protector.
+- **Hero Section** - 3D particle background with WebGL animations
+- **Partners Carousel** - Infinite scrolling banner showcasing strategic partners (OKX, Arbitrum, iExec, Saudi Ministry, etc.)
+- **Features Grid** - Key protocol advantages (Overcollateralized, Sustainable APY, Multi-Asset Support, Shariah-Compliant)
+- **Assets Section** - Supported deposit assets (BTC, ETH, USDC, USDT)
+- **Collaborators Banner** - Team background institutions (Chainlink, Binance, King's College, Consensys, Metamask, etc.)
+- **Performance Chart** - Interactive animated chart comparing QNT vs ETH, BTC, S&P 500, and Gold
+- **FAQ Section** - Comprehensive answers to common questions
+- **Whitelist Form** - Email capture with iExec Web3Mail integration
 
----
+### Design System
 
-## 📦 Installation & Deployment
-
-Since this project is built as a highly optimized static site, deployment is remarkably simple.
-
-### Local Development
-
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/siberia-dev-sui/quintes-neo-experimental-v6.git
-    cd quintes-neo-experimental-v6
-    ```
-
-2.  **Serve the application:**
-    You can use any static file server. For example:
-    
-    *Python:*
-    ```bash
-    python3 -m http.server 8000
-    ```
-    
-    *Node.js (http-server):*
-    ```bash
-    npx http-server .
-    ```
-
-3.  **Access:**
-    Open `http://localhost:8000` in your browser.
-
-### Recommended Requirements
-*   **Browser**: Chrome, Brave, or Firefox with **MetaMask** installed.
-*   **Network**: Arbitrum Sepolia Testnet (for testing Web3 interactions).
+- ✨ **Procedural Aesthetic** - Chamfered corners, monospace typography
+- 🎨 **Gold Primary** - `#EBB800` brand color
+- 🌑 **Dark Theme** - Optimized for crypto audiences
+- 📱 **Fully Responsive** - Mobile-first design
+- ⚡ **Smooth Animations** - Intersection Observer triggers, CSS transitions
 
 ---
 
-## 📂 Project Structure
+## 🛠️ Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| **Next.js 15** | React framework with App Router |
+| **TypeScript** | Type-safe development |
+| **Tailwind CSS v4** | Utility-first styling |
+| **Three.js + React Three Fiber** | 3D particle animations |
+| **Recharts** | Performance chart visualizations |
+| **iExec** | Decentralized email encryption |
+| **Ethers.js v6** | Blockchain interactions |
+| **Sonner** | Toast notifications |
+
+---
+
+## 📦 Installation
 
 ```bash
-quintes-neo-experimental-v6/
-├── index.html          # Main application entry point
-├── css/                # Stylesheets (Layout, Typography, Effects)
-├── js/
-│   ├── web3-connect.js # Core Web3 logic (Wallet, Network, UI)
-│   └── ...             # UI interactions & Polyfills
-├── images/             # Optimized assets (WebP/SVG)
-└── fonts/              # Custom typography files
+# Clone repository
+git clone https://github.com/siberia-dev-sui/quintes-protocol-2026.git
+cd quintes-protocol-2026
+
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+Open [http://localhost:3000](http://localhost:3000) to view the site.
+
+---
+
+## 🎨 Key Components
+
+### Performance Chart (`components/performance-chart.tsx`)
+- **Animated counters** - Numbers count up on scroll
+- **Minimalista color scheme** - Gold QNT vs grayscale competitors
+- **Intersection Observer** - Triggers animations when visible
+- **Responsive design** - Adapts to all screen sizes
+
+### Collaborators Carousel (`components/collaborators-carousel.tsx`)
+- **Infinite scroll** - Left-to-right animation (reverse of partners)
+- **Institutional logos** - Team background credentials
+- **Hover effects** - Grayscale to color on hover
+
+### FAQ Section (`components/faq-section.tsx`)
+- **5 Comprehensive Questions** - Covers earning, QNT definition, safety, Shariah compliance, Luna/UST comparison
+- **Accordion UI** - Expandable/collapsible answers
+- **Monospace typography** - Consistent with brand
+
+### Auto-Hide Navbar (`components/header.tsx`)
+- **Scroll detection** - Hides when scrolling down, shows when scrolling up
+- **Smooth transitions** - 300ms ease-in-out animation
+- **Always visible at top** - Ensures navigation access
+
+---
+
+## 🌐 Deployment
+
+### Vercel (Recommended)
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel --prod
+```
+
+### Environment Variables
+
+Create `.env.local`:
+
+```env
+# Optional: Analytics
+NEXT_PUBLIC_GA_ID=your_google_analytics_id
+
+# iExec (for whitelist email encryption)
+NEXT_PUBLIC_IEXEC_APP_ADDRESS=0x...
+NEXT_PUBLIC_WEB3MAIL_APP=your_web3mail_app
 ```
 
 ---
 
-## 🔒 Security & Privacy
+## 📄 Project Structure
 
-This project leverages **iExec** to ensure that user contact information remains confidential. By using Web3 Mail, we enable direct communication with our community without storing raw emails on centralized, vulnerable databases.
+```
+quintes-minimal-v2/
+├── app/
+│   ├── layout.tsx          # Root layout
+│   ├── page.tsx            # Homepage
+│   └── globals.css         # Global styles
+├── components/
+│   ├── hero.tsx            # Hero section with 3D particles
+│   ├── partners-carousel.tsx
+│   ├── features-section.tsx
+│   ├── assets-section.tsx
+│   ├── collaborators-carousel.tsx
+│   ├── performance-chart.tsx  # Animated market comparison
+│   ├── faq-section.tsx
+│   ├── whitelist-section.tsx
+│   ├── footer.tsx
+│   └── header.tsx          # Auto-hide navbar
+├── public/
+│   └── logos/              # Partner & collaborator logos
+└── styles/
+    └── globals.css         # Design system tokens
+```
 
 ---
 
-© 2025 Quintes Protocol. All Rights Reserved.
+## 🎯 Recent Updates (Jan 2026)
+
+### ✅ Completed
+- ✨ **Performance Chart** - Added animated comparison chart with gold QNT vs grayscale competitors
+- 🏢 **Collaborators Banner** - New infinite carousel with institutional logos (Chainlink, Binance, etc.)
+- 📝 **FAQ Refinement** - Reduced from 6 to 5 most essential questions
+- 🎨 **Color Scheme** - Applied "Minimalista Brand" palette (gold hero, grayscale competition)
+- 🔄 **Auto-Hide Navbar** - Implemented smooth scroll-based navbar visibility
+- 🌊 **Animations** - Added intersection observer triggers, animated counters, shimmer effects
+- 🧹 **Code Cleanup** - Removed Mission section, optimized components
+
+### 🎨 Design Philosophy
+- **Procedural** - Chamfered corners, monospace fonts, grid-based layouts
+- **Minimal** - Only essential information, no clutter
+- **Premium** - Gold accents, smooth animations, high-quality imagery
+- **Engineered** - Reflects QNT's predictable, mathematical approach
+
+---
+
+## 🤝 Contributing
+
+This is a private repository for Quintes Protocol. For inquiries:
+
+- 🐦 **Twitter**: [@QuintesProtocol](https://x.com/QuintesProtocol)
+- 📚 **Docs**: [quintes.gitbook.io](https://quintes.gitbook.io/quintes)
+- 💬 **Telegram**: [t.me/QuintesProtocol](https://t.me/QuintesProtocol)
+- 💬 **Discord**: [discord.gg/quintes](https://discord.gg/quintes)
+
+---
+
+## 📜 License
+
+© 2026 Quintes Protocol. All rights reserved.
+
+---
+
+## 🙏 Acknowledgments
+
+Built with contributions from:
+- **Chainlink** - Oracle infrastructure
+- **Binance** - Exchange partnerships
+- **iExec** - Decentralized computing
+- **Arbitrum** - L2 scaling solution
+- Academic collaborators from **King's College London**, **UCL**
+- Financial expertise from **Morgan Stanley**, **Consensys**
+
+**Powered by**: Arbitrum & iExec
+
+---
+
+<p align="center">
+  <strong>Deposit your crypto. Mint QNT. Watch it grow. 🚀</strong>
+</p>
