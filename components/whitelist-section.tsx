@@ -252,7 +252,16 @@ export function WhitelistSection() {
     // RENDER
     // =========================================================================
     return (
-        <section id="whitelist" className="section-with-guides py-32 px-6">
+        <section id="whitelist" className="section-with-guides py-32 px-6 relative overflow-hidden">
+            {/* Radial gradient background with subtle glow */}
+            <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    background: 'radial-gradient(ellipse at center, rgba(255, 199, 0, 0.03) 0%, transparent 70%)',
+                    backgroundSize: '100% 100%'
+                }}
+            />
+
             {/* Guide lines */}
             <div className="guide-lines" />
 
@@ -267,13 +276,13 @@ export function WhitelistSection() {
                     Be among the first to access Quintes Protocol and start earning sustainable yields.
                 </p>
 
-                {/* TABS */}
+                {/* TABS with micro-animations */}
                 <div className="flex gap-3 justify-center mb-10">
                     <button
                         onClick={() => setActiveTab('free')}
-                        className={`px-6 py-3 font-mono text-sm uppercase transition-all border ${activeTab === 'free'
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border bg-background text-foreground/60 hover:text-foreground hover:border-foreground/30'
+                        className={`px-6 py-3 font-mono text-sm uppercase transition-all duration-300 border transform hover:scale-105 hover:-translate-y-0.5 ${activeTab === 'free'
+                            ? 'border-primary bg-primary/10 text-primary shadow-lg shadow-primary/20'
+                            : 'border-border bg-background text-foreground/60 hover:text-foreground hover:border-foreground/30 hover:shadow-md'
                             }`}
                         style={{
                             clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)"
@@ -283,18 +292,27 @@ export function WhitelistSection() {
                     </button>
                     <button
                         onClick={() => setActiveTab('premium')}
-                        className={`px-6 py-3 font-mono text-sm uppercase transition-all border relative ${activeTab === 'premium'
-                            ? 'border-primary bg-primary/10 text-primary'
-                            : 'border-border bg-background text-foreground/60 hover:text-foreground hover:border-foreground/30'
+                        className={`px-6 py-3 font-mono text-sm uppercase transition-all duration-300 border relative transform hover:scale-105 hover:-translate-y-0.5 ${activeTab === 'premium'
+                            ? 'border-primary bg-primary/10 text-primary shadow-lg shadow-primary/30'
+                            : 'border-border bg-background text-foreground/60 hover:text-foreground hover:border-foreground/30 hover:shadow-md'
                             }`}
                         style={{
-                            clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)"
+                            clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)",
+                            animation: activeTab === 'premium' ? 'pulse-glow 2s ease-in-out infinite' : 'none'
                         }}
                     >
-                        <span className="inline-block size-1.5 rounded-full bg-primary shadow-glow shadow-primary/50 mr-2" />
+                        <span className="inline-block size-1.5 rounded-full bg-primary shadow-glow shadow-primary/50 mr-2 animate-pulse" />
                         [PREMIUM] Verified
                     </button>
                 </div>
+
+                {/* Pulse glow animation for premium tab */}
+                <style jsx>{`
+                    @keyframes pulse-glow {
+                        0%, 100% { box-shadow: 0 0 20px rgba(255, 199, 0, 0.3); }
+                        50% { box-shadow: 0 0 30px rgba(255, 199, 0, 0.5); }
+                    }
+                `}</style>
 
                 {/* CONTENT AREA */}
                 <div className="max-w-lg mx-auto">
@@ -319,12 +337,12 @@ export function WhitelistSection() {
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="your@email.com"
                                         required
-                                        className="w-full sm:w-auto min-w-[280px] px-6 py-4 bg-background border border-border font-mono text-foreground placeholder:text-foreground/40 focus:border-primary/50 focus:outline-none transition-colors"
+                                        className="w-full sm:w-auto min-w-[280px] px-6 py-4 bg-background border border-border font-mono text-foreground placeholder:text-foreground/40 focus:border-primary/50 focus:shadow-lg focus:shadow-primary/20 focus:scale-[1.02] focus:outline-none transition-all duration-300"
                                         style={{
                                             clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)"
                                         }}
                                     />
-                                    <Button type="submit" size="sm">
+                                    <Button type="submit" size="sm" className="hover:scale-105 hover:-translate-y-0.5 transition-transform duration-300">
                                         [Subscribe]
                                     </Button>
                                 </form>
@@ -367,23 +385,32 @@ export function WhitelistSection() {
                                         </span>
                                     </div>
 
-                                    <input
-                                        type="email"
-                                        value={proEmail}
-                                        onChange={(e) => setProEmail(e.target.value)}
-                                        placeholder="your@email.com"
-                                        disabled={isSubmitting}
-                                        className="w-full px-6 py-4 bg-background border border-border font-mono text-foreground placeholder:text-foreground/40 focus:border-primary/50 focus:outline-none transition-colors disabled:opacity-50"
-                                        style={{
-                                            clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)"
-                                        }}
-                                    />
+                                    {/* Email input with encryption icon */}
+                                    <div className="relative w-full">
+                                        <input
+                                            type="email"
+                                            value={proEmail}
+                                            onChange={(e) => setProEmail(e.target.value)}
+                                            placeholder="your@email.com"
+                                            disabled={isSubmitting}
+                                            className="w-full px-6 py-4 pr-12 bg-background border border-border font-mono text-foreground placeholder:text-foreground/40 focus:border-primary/50 focus:shadow-lg focus:shadow-primary/20 focus:scale-[1.02] focus:outline-none transition-all duration-300 disabled:opacity-50"
+                                            style={{
+                                                clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)"
+                                            }}
+                                        />
+                                        {/* Trust signal: Encryption icon */}
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-primary/60" title="End-to-end encrypted">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
+                                        </div>
+                                    </div>
 
                                     <Button
                                         onClick={joinVerifiedWhitelist}
                                         disabled={isSubmitting}
                                         size="sm"
-                                        className="w-full"
+                                        className="w-full hover:scale-105 hover:-translate-y-0.5 transition-transform duration-300"
                                     >
                                         {isSubmitting ? (
                                             <>
@@ -408,7 +435,7 @@ export function WhitelistSection() {
                                         onClick={connectWallet}
                                         disabled={isConnecting}
                                         size="sm"
-                                        className="w-full"
+                                        className="w-full hover:scale-105 hover:-translate-y-0.5 transition-transform duration-300"
                                     >
                                         {isConnecting ? (
                                             <>
@@ -422,10 +449,16 @@ export function WhitelistSection() {
                                         )}
                                     </Button>
 
-                                    <p className="font-mono text-xs text-foreground/40 text-center">
-                                        Privacy-preserving signup via wallet.<br />
-                                        Your email is encrypted on-chain using <span className="text-primary">iExec TEE</span>.
-                                    </p>
+                                    {/* Trust signal: iExec badge with shield icon */}
+                                    <div className="flex items-center justify-center gap-2 font-mono text-xs text-foreground/40 text-center">
+                                        <svg className="w-4 h-4 text-primary/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        </svg>
+                                        <p>
+                                            Privacy-preserving signup via wallet.<br />
+                                            Your email is encrypted on-chain using <span className="text-primary font-semibold">iExec TEE</span>.
+                                        </p>
+                                    </div>
                                 </div>
                             )}
                         </div>

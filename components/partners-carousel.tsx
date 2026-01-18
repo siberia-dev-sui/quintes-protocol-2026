@@ -12,7 +12,7 @@ const partners = [
 
 export function PartnersCarousel() {
     return (
-        <section className="relative">
+        <section className="relative pt-12">
             {/* Top border with integrated text */}
             <div className="relative border-t border-border">
                 <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 bg-background z-50">

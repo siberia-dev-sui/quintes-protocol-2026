@@ -15,34 +15,48 @@ const navItems = [
 export const Header = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isAtTop, setIsAtTop] = useState(true);
 
   useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout;
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+
+      // Track if we're at the top for glassmorphism
+      setIsAtTop(currentScrollY < 10);
 
       // Show navbar when at the top
       if (currentScrollY < 10) {
         setIsVisible(true);
       }
-      // Hide when scrolling down, show when scrolling up
+      // Hide when scrolling down
       else if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down
+        clearTimeout(scrollTimeout);
         setIsVisible(false);
-      } else if (currentScrollY < lastScrollY) {
-        // Scrolling up
-        setIsVisible(true);
+      }
+      // Delayed reappearance when scrolling up (300ms delay)
+      else if (currentScrollY < lastScrollY) {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          setIsVisible(true);
+        }, 300);
       }
 
       setLastScrollY(currentScrollY);
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(scrollTimeout);
+    };
   }, [lastScrollY]);
 
   return (
     <div
-      className={`fixed z-50 pt-8 md:pt-14 top-0 left-0 w-full transition-transform duration-300 ease-in-out ${isVisible ? "translate-y-0" : "-translate-y-full"
+      className={`fixed z-50 pt-8 md:pt-14 top-0 left-0 w-full transition-all duration-300 ease-in-out ${isVisible ? "translate-y-0" : "-translate-y-full"
+        } ${!isAtTop && isVisible ? "backdrop-blur-xl bg-background/70" : "bg-transparent"
         }`}
     >
       <header className="flex items-center justify-between container">
