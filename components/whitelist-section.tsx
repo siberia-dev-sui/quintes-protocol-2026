@@ -1,165 +1,484 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { ethers } from 'ethers';
-import { IExecDataProtector } from '@iexec/dataprotector';
-import { IExecWeb3mail } from '@iexec/web3mail';
-import { supabase } from '@/lib/supabase';
-import { generateReferralCode } from '@/lib/referral';
-import { useSearchParams } from 'next/navigation';
+import { useState } from "react";
+import { toast } from "sonner";
+import { Pill } from "./pill";
+import { Button } from "./ui/button";
+import { NETWORK_CONFIG } from "@/lib/network-config";
 
-// CONSTANTES VITALES
-const IEXEC_BELLECOUR_CHAIN_ID = '0x86'; // Chain ID 134 en Hex
-const WEB3MAIL_APP_ADDRESS = '0xD5054a18565c4a9E5c1aa3cEB53258bd59d4c78C'; // iExec Web3Mail App
+// =============================================================================
+// iEXEC WEB3MAIL INTEGRATION (User Pays Gas)
+// =============================================================================
+
+// Web3Mail iApp whitelist address (supports all versions)
+const WEB3MAIL_APP_WHITELIST = '0xD5054a18565c4a9E5c1aa3cEB53258bd59d4c78C';
+
+/**
+ * Initialize iExec DataProtector SDK for protectData & grantAccess
+ * Note: User's MetaMask signer is used (user signs & pays gas)
+ */
+async function initializeDataProtector() {
+    const { IExecDataProtectorCore } = await import('@iexec/dataprotector');
+    return new IExecDataProtectorCore(window.ethereum!);
+}
+
+/**
+ * Initialize iExec Web3Mail SDK for sendEmail
+ */
+async function initializeWeb3Mail() {
+    const { IExecWeb3mail } = await import('@iexec/web3mail');
+    const { BrowserProvider } = await import('ethers');
+
+    const provider = new BrowserProvider(window.ethereum!);
+    const signer = await provider.getSigner();
+
+    return new IExecWeb3mail(signer);
+}
+
+/**
+ * Check and switch to Arbitrum Sepolia network
+ */
+async function ensureCorrectNetwork(): Promise<boolean> {
+    if (!window.ethereum) return false;
+
+    try {
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        const currentChainId = parseInt(chainId as unknown as string, 16);
+
+        if (currentChainId === NETWORK_CONFIG.chainId) return true;
+
+        // Try to switch network
+        try {
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: NETWORK_CONFIG.chainIdHex }]
+            });
+            return true;
+        } catch (switchError: unknown) {
+            // Network not added, try to add it
+            if ((switchError as { code: number }).code === 4902) {
+                await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                        chainId: NETWORK_CONFIG.chainIdHex,
+                        chainName: NETWORK_CONFIG.chainName,
+                        nativeCurrency: NETWORK_CONFIG.nativeCurrency,
+                        rpcUrls: [NETWORK_CONFIG.rpcUrl],
+                        blockExplorerUrls: [NETWORK_CONFIG.blockExplorer]
+                    }]
+                });
+                return true;
+            }
+            throw switchError;
+        }
+    } catch (error) {
+        console.error('Network switch error:', error);
+        return false;
+    }
+}
+
+// =============================================================================
+// COMPONENT
+// =============================================================================
+
+type TabMode = 'free' | 'premium';
+
+export function WhitelistSection() {
+    // Tab state
+    const [activeTab, setActiveTab] = useState<TabMode>('free');
+
+    // FREE version state
+    const [email, setEmail] = useState("");
+    const [freeSubmitted, setFreeSubmitted] = useState(false);
+
+    // PREMIUM version state
+    const [proEmail, setProEmail] = useState("");
+    const [walletConnected, setWalletConnected] = useState(false);
+    const [walletAddress, setWalletAddress] = useState("");
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitStatus, setSubmitStatus] = useState("");
+    const [premiumSuccess, setPremiumSuccess] = useState(false);
+
+    const shortenAddress = (address: string) => {
+        return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
+    };
+
+    // =========================================================================
+    // FREE VERSION - Simple Email
+    // =========================================================================
+    const handleFreeSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (email) {
+            setFreeSubmitted(true);
+            console.log("Whitelist signup (FREE):", email);
+            // TODO: Send to backend/database
+        }
+    };
+
+    // =========================================================================
+    // PREMIUM VERSION - Connect Wallet
+    // =========================================================================
+    const connectWallet = async () => {
+        if (typeof window.ethereum === "undefined") {
+            toast.error("MetaMask is not installed", {
+                description: "Please install MetaMask to continue.",
+                action: {
+                    label: "Install",
+                    onClick: () => window.open("https://metamask.io/download/", "_blank")
+                }
+            });
+            return;
+        }
+
+        setIsConnecting(true);
+        try {
+            const accounts = await window.ethereum.request({
+                method: "eth_requestAccounts"
+            });
+
+            if (accounts && accounts.length > 0) {
+                // Check/switch network
+                const correctNetwork = await ensureCorrectNetwork();
+                if (!correctNetwork) {
+                    toast.warning(`Please switch to ${NETWORK_CONFIG.chainName} in MetaMask`);
+                    setIsConnecting(false);
+                    return;
+                }
+
+                setWalletAddress(accounts[0]);
+                setWalletConnected(true);
+            }
+        } catch (error) {
+            console.error("Connection error:", error);
+            toast.error("Failed to connect wallet", {
+                description: "Please try again."
+            });
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+
+    // =========================================================================
+    // PREMIUM VERSION - Join Whitelist (iExec)
+    // =========================================================================
+    const joinVerifiedWhitelist = async () => {
+        if (!proEmail || !proEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+            toast.error("Please enter a valid email address");
+            return;
+        }
+
+        setIsSubmitting(true);
+        setSubmitStatus("Initializing...");
+
+        try {
+            // Ensure correct network
+            const correctNetwork = await ensureCorrectNetwork();
+            if (!correctNetwork) {
+                throw new Error(`Please switch to ${NETWORK_CONFIG.chainName}`);
+            }
+
+            // Initialize iExec SDKs (uses user's wallet)
+            setSubmitStatus("Connecting to iExec...");
+            const dataProtector = await initializeDataProtector();
+            const web3mail = await initializeWeb3Mail();
+
+            // STEP 1: Protect Email (User signs TX #1)
+            setSubmitStatus("🔒 Encrypting email...");
+            const protectedData = await dataProtector.protectData({
+                data: { email: proEmail },
+                name: `Quintes Whitelist - ${walletAddress.slice(0, 8)}`
+            });
+            console.log("✅ Email protected:", protectedData.address);
+
+            // STEP 2: Grant Access to Web3Mail App (User signs TX #2)
+            // This allows the Web3Mail iApp to process the protected email
+            setSubmitStatus("🔑 Granting access...");
+            await dataProtector.grantAccess({
+                protectedData: protectedData.address,
+                authorizedApp: WEB3MAIL_APP_WHITELIST, // iExec Web3Mail whitelist
+                authorizedUser: '0x0000000000000000000000000000000000000000', // Allow any user (sender)
+                numberOfAccess: 1000 // Allow multiple emails to be sent
+            });
+            console.log("✅ Access granted to Web3Mail");
+
+            // STEP 3: Send Confirmation Email (User signs TX #3)
+            setSubmitStatus("📨 Sending confirmation...");
+            await web3mail.sendEmail({
+                protectedData: protectedData.address,
+                emailSubject: "Welcome to Quintes Protocol Whitelist",
+                emailContent: `
+                    <html>
+                        <body style="font-family: Arial, sans-serif; background: #000; color: #fff; padding: 40px;">
+                            <div style="max-width: 600px; margin: 0 auto;">
+                                <h1 style="color: #FFC700; font-size: 32px;">🎉 Welcome to Quintes Protocol!</h1>
+                                <p style="font-size: 18px; line-height: 1.6;">
+                                    Congratulations! Your spot on the Quintes Protocol whitelist is secured.
+                                </p>
+                                <p style="font-size: 16px; line-height: 1.6;">
+                                    You're now among the first to experience institutional-grade DeFi yields.
+                                </p>
+                                <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 30px 0; border: 2px solid #FFC700;">
+                                    <p style="margin: 0; font-size: 14px; color: #FFC700;"><strong>What's Next?</strong></p>
+                                    <p style="margin: 10px 0 0 0; font-size: 14px;">We'll keep you updated on our launch. Stay tuned!</p>
+                                </div>
+                                <p style="font-size: 12px; color: #888;">
+                                    Sent via Web3 Mail - decentralized, encrypted, and secure.
+                                </p>
+                            </div>
+                        </body>
+                    </html>
+                `
+            });
+            console.log("✅ Email sent successfully");
+
+            // Success!
+            setPremiumSuccess(true);
+            setSubmitStatus("✅ Successfully whitelisted!");
+
+        } catch (error: unknown) {
+            console.error("❌ iExec Whitelist Error:", error);
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            toast.error("Registration failed", {
+                description: errorMessage
+            });
+            setSubmitStatus("");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // =========================================================================
+    // RENDER
+    // =========================================================================
+    return (
+        <section id="whitelist" className="section-with-guides py-32 px-6 relative overflow-hidden">
+            {/* Radial gradient background with subtle glow */}
+            <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    background: 'radial-gradient(ellipse at center, rgba(255, 199, 0, 0.03) 0%, transparent 70%)',
+                    backgroundSize: '100% 100%'
+                }}
+            />
+
+            {/* Guide lines */}
+            <div className="guide-lines" />
+
+            <div className="container mx-auto max-w-3xl text-center relative z-10">
+                <Pill className="mb-6">EARLY ACCESS</Pill>
+
+                <h2 className="text-4xl md:text-5xl font-sentient mb-6">
+                    Join the <i className="font-light">Whitelist</i>
+                </h2>
+
+                <p className="font-mono text-foreground/60 mb-12">
+                    Be among the first to access Quintes Protocol and start earning sustainable yields.
+                </p>
+
+                {/* TABS with micro-animations */}
+                <div className="flex gap-3 justify-center mb-10">
+                    <button
+                        onClick={() => setActiveTab('free')}
+                        className={`px-6 py-3 font-mono text-sm uppercase transition-all duration-300 border transform hover:scale-105 hover:-translate-y-0.5 ${activeTab === 'free'
+                            ? 'border-primary bg-primary/10 text-primary shadow-lg shadow-primary/20'
+                            : 'border-border bg-background text-foreground/60 hover:text-foreground hover:border-foreground/30 hover:shadow-md'
+                            }`}
+                        style={{
+                            clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)"
+                        }}
+                    >
+                        [FREE] Standard
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('premium')}
+                        className={`px-6 py-3 font-mono text-sm uppercase transition-all duration-300 border relative transform hover:scale-105 hover:-translate-y-0.5 ${activeTab === 'premium'
+                            ? 'border-primary bg-primary/10 text-primary shadow-lg shadow-primary/30'
+                            : 'border-border bg-background text-foreground/60 hover:text-foreground hover:border-foreground/30 hover:shadow-md'
+                            }`}
+                        style={{
+                            clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)",
+                            animation: activeTab === 'premium' ? 'pulse-glow 2s ease-in-out infinite' : 'none'
+                        }}
+                    >
+                        <span className="inline-block size-1.5 rounded-full bg-primary shadow-glow shadow-primary/50 mr-2 animate-pulse" />
+                        [PREMIUM] Verified
+                    </button>
+                </div>
+
+                {/* Pulse glow animation for premium tab */}
+                <style jsx>{`
+                    @keyframes pulse-glow {
+                        0%, 100% { box-shadow: 0 0 20px rgba(255, 199, 0, 0.3); }
+                        50% { box-shadow: 0 0 30px rgba(255, 199, 0, 0.5); }
+                    }
+                `}</style>
+
+                {/* CONTENT AREA */}
+                <div className="max-w-lg mx-auto">
+                    {/* ============= FREE VERSION ============= */}
+                    {activeTab === 'free' && (
+                        <div className="animate-fadeIn">
+                            {freeSubmitted ? (
+                                <div
+                                    className="inline-flex items-center gap-3 px-8 py-4 border border-primary/50 bg-primary/10"
+                                    style={{
+                                        clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)"
+                                    }}
+                                >
+                                    <span className="inline-block size-2 rounded-full bg-primary shadow-glow shadow-primary/50" />
+                                    <span className="font-mono text-primary uppercase">Submission Received</span>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleFreeSubmit} className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="your@email.com"
+                                        required
+                                        className="w-full sm:w-auto min-w-[280px] px-6 py-4 bg-background border border-border font-mono text-foreground placeholder:text-foreground/40 focus:border-primary/50 focus:shadow-lg focus:shadow-primary/20 focus:scale-[1.02] focus:outline-none transition-all duration-300"
+                                        style={{
+                                            clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)"
+                                        }}
+                                    />
+                                    <Button type="submit" size="sm" className="hover:scale-105 hover:-translate-y-0.5 transition-transform duration-300">
+                                        [Subscribe]
+                                    </Button>
+                                </form>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ============= PREMIUM VERSION (iExec) ============= */}
+                    {activeTab === 'premium' && (
+                        <div className="animate-fadeIn">
+                            {premiumSuccess ? (
+                                // Success State
+                                <div
+                                    className="inline-flex flex-col items-center gap-3 px-10 py-8 border border-primary/50 bg-primary/10"
+                                    style={{
+                                        clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)"
+                                    }}
+                                >
+                                    <div className="size-12 rounded-full border-2 border-primary bg-primary/20 flex items-center justify-center">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-6 h-6 text-primary">
+                                            <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </div>
+                                    <span className="font-mono text-primary uppercase font-semibold">Successfully Whitelisted!</span>
+                                    <span className="font-mono text-foreground/60 text-sm">Check your email for confirmation.</span>
+                                </div>
+                            ) : walletConnected ? (
+                                // Connected - Show Email Input
+                                <div className="space-y-5">
+                                    {/* Wallet Connected Badge */}
+                                    <div
+                                        className="inline-flex items-center gap-2 px-4 py-2 border border-primary/30 bg-primary/5"
+                                        style={{
+                                            clipPath: "polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px)"
+                                        }}
+                                    >
+                                        <span className="inline-block size-1.5 rounded-full bg-primary shadow-glow shadow-primary/50" />
+                                        <span className="font-mono text-primary text-xs uppercase">
+                                            {shortenAddress(walletAddress)}
+                                        </span>
+                                    </div>
+
+                                    {/* Email input with encryption icon */}
+                                    <div className="relative w-full">
+                                        <input
+                                            type="email"
+                                            value={proEmail}
+                                            onChange={(e) => setProEmail(e.target.value)}
+                                            placeholder="your@email.com"
+                                            disabled={isSubmitting}
+                                            className="w-full px-6 py-4 pr-12 bg-background border border-border font-mono text-foreground placeholder:text-foreground/40 focus:border-primary/50 focus:shadow-lg focus:shadow-primary/20 focus:scale-[1.02] focus:outline-none transition-all duration-300 disabled:opacity-50"
+                                            style={{
+                                                clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)"
+                                            }}
+                                        />
+                                        {/* Trust signal: Encryption icon */}
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-primary/60" title="End-to-end encrypted">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    <Button
+                                        onClick={joinVerifiedWhitelist}
+                                        disabled={isSubmitting}
+                                        size="sm"
+                                        className="w-full hover:scale-105 hover:-translate-y-0.5 transition-transform duration-300"
+                                    >
+                                        {isSubmitting ? (
+                                            <>
+                                                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="8" />
+                                                </svg>
+                                                {submitStatus}
+                                            </>
+                                        ) : (
+                                            "[Join Verified Whitelist]"
+                                        )}
+                                    </Button>
+
+                                    <p className="font-mono text-xs text-foreground/40 text-center">
+                                        ⚠️ Requires ETH on Arbitrum Sepolia for gas
+                                    </p>
+                                </div>
+                            ) : (
+                                // Not Connected - Show Connect Button
+                                <div className="space-y-4">
+                                    <Button
+                                        onClick={connectWallet}
+                                        disabled={isConnecting}
+                                        size="sm"
+                                        className="w-full hover:scale-105 hover:-translate-y-0.5 transition-transform duration-300"
+                                    >
+                                        {isConnecting ? (
+                                            <>
+                                                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="8" />
+                                                </svg>
+                                                Connecting...
+                                            </>
+                                        ) : (
+                                            "[Connect Wallet]"
+                                        )}
+                                    </Button>
+
+                                    {/* Trust signal: iExec badge with shield icon */}
+                                    <div className="flex items-center justify-center gap-2 font-mono text-xs text-foreground/40 text-center">
+                                        <svg className="w-4 h-4 text-primary/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        </svg>
+                                        <p>
+                                            Privacy-preserving signup via wallet.<br />
+                                            Your email is encrypted on-chain using <span className="text-primary font-semibold">iExec TEE</span>.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                <p className="font-mono text-xs text-foreground/40 mt-10">
+                    Powered by Arbitrum & iExec
+                </p>
+            </div>
+        </section>
+    );
+}
 
 // Extend Window interface for ethereum
 declare global {
     interface Window {
-        ethereum?: any;
+        ethereum?: {
+            request: (args: { method: string; params?: unknown[] }) => Promise<string[]>;
+            on: (event: string, callback: (accounts: string[]) => void) => void;
+        };
     }
-}
-
-export function WhitelistSection() {
-    const [email, setEmail] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [status, setStatus] = useState('');
-    const searchParams = useSearchParams();
-
-    // 1. Función para asegurar la red correcta (BELLECOUR)
-    const switchNetworkToBellecour = async () => {
-        if (!window.ethereum) throw new Error("No wallet found");
-
-        try {
-            await window.ethereum.request({
-                method: 'wallet_switchEthereumChain',
-                params: [{ chainId: IEXEC_BELLECOUR_CHAIN_ID }],
-            });
-        } catch (switchError: any) {
-            // Si la red no existe, la agregamos
-            if (switchError.code === 4902) {
-                await window.ethereum.request({
-                    method: 'wallet_addEthereumChain',
-                    params: [
-                        {
-                            chainId: IEXEC_BELLECOUR_CHAIN_ID,
-                            chainName: 'iExec Bellecour',
-                            nativeCurrency: { name: 'xRLC', symbol: 'xRLC', decimals: 18 },
-                            rpcUrls: ['https://bellecour.iex.ec'],
-                            blockExplorerUrls: ['https://blockscout-bellecour.iex.ec'],
-                        },
-                    ],
-                });
-            } else {
-                throw switchError;
-            }
-        }
-    };
-
-    const handleRegister = async () => {
-        if (!email) return alert("Por favor ingresa un email");
-        setLoading(true);
-        setStatus('Iniciando...');
-
-        try {
-            // A. Verificar Wallet y Red
-            if (!window.ethereum) throw new Error("Instala MetaMask");
-            await switchNetworkToBellecour(); // FIX CRÍTICO DEL AUDITOR
-
-            const provider = new ethers.BrowserProvider(window.ethereum);
-            const signer = await provider.getSigner();
-            const userAddress = await signer.getAddress();
-
-            // B. Inicializar SDKs con el Signer v6
-            const dataProtector = new IExecDataProtector(provider);
-            const web3mail = new IExecWeb3mail(provider);
-
-            // C. Flujo iExec (Las 3 firmas dolorosas pero necesarias por ahora)
-
-            // Paso 1: Proteger el Email
-            setStatus('1/3 Firmando protección de datos...');
-            const protectedData = await dataProtector.core.protectData({
-                data: { email: email },
-                name: `Email for Quintes Whitelist`,
-            });
-            const protectedDataAddress = protectedData.address;
-
-            // Paso 2: Dar permiso a la App de Email
-            setStatus('2/3 Autorizando envío de email...');
-            await dataProtector.core.grantAccess({
-                protectedData: protectedDataAddress,
-                authorizedApp: WEB3MAIL_APP_ADDRESS,
-                authorizedUser: userAddress, // FIX DE SEGURIDAD: Solo tú puedes usar tu dato
-            });
-
-            // Paso 3: Enviar el Email de Bienvenida
-            setStatus('3/3 Enviando confirmación...');
-            await web3mail.sendEmail({
-                protectedData: protectedDataAddress,
-                emailSubject: 'Bienvenido a Quintes Protocol',
-                emailContent: 'Estás oficialmente en la Whitelist. Tu privacidad está protegida on-chain.',
-                contentType: 'text/plain',
-                senderName: 'Quintes Protocol',
-            });
-
-            // D. GUARDAR EN SUPABASE (El eslabón perdido)
-            setStatus('Finalizando registro...');
-
-            const refCode = generateReferralCode();
-            const referredBy = searchParams.get('ref');
-
-            const { error: dbError } = await supabase
-                .from('whitelist_users')
-                .insert([
-                    {
-                        wallet_address: userAddress,
-                        protected_data_address: protectedDataAddress,
-                        referral_code: refCode,
-                        referred_by: referredBy,
-                        status: 'active'
-                    }
-                ]);
-
-            if (dbError) {
-                console.error("Error guardando en DB:", dbError);
-                // No fallamos toda la app si falla la DB, pero avisamos
-                alert("Registro en Blockchain exitoso, pero hubo un error guardando tu perfil.");
-            } else {
-                alert(`¡ÉXITO TOTAL! Tu código de referido es: ${refCode}`);
-                setEmail('');
-            }
-
-        } catch (error: any) {
-            console.error(error);
-            alert(`Error: ${error.message || "Algo salió mal"}`);
-        } finally {
-            setLoading(false);
-            setStatus('');
-        }
-    };
-
-    return (
-        <div className="p-4 border rounded bg-gray-900 text-white">
-            <h2 className="text-xl mb-4">Únete a la Whitelist Privada</h2>
-            <input
-                type="email"
-                placeholder="tu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="text-black p-2 rounded w-full mb-4"
-                disabled={loading}
-            />
-            <button
-                onClick={handleRegister}
-                disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
-            >
-                {loading ? status : 'Proteger Email & Unirse'}
-            </button>
-
-            {/* Disclaimer sobre UX */}
-            <p className="text-xs text-gray-400 mt-2">
-                *Requerirá 3 firmas en tu wallet (Red iExec Bellecour). Es gratis (Gasless).
-            </p>
-        </div>
-    );
 }
