@@ -7,7 +7,7 @@ import { CollaboratorsCarousel } from "@/components/collaborators-carousel";
 import { PerformanceChart } from "@/components/performance-chart";
 import { AssetsSection } from "@/components/assets-section";
 import { FAQSection } from "@/components/faq-section";
-import { WhitelistSection } from "@/components/whitelist-section";
+import { WhitelistSectionWrapper } from "@/components/whitelist-section";
 import { Footer } from "@/components/footer";
 import { Leva } from "leva";
 
@@ -21,9 +21,10 @@ export default function Home() {
       <CollaboratorsCarousel />
       <PerformanceChart />
       <FAQSection />
-      <WhitelistSection />
+      <WhitelistSectionWrapper />
       <Footer />
       <Leva hidden />
     </>
   );
 }
+

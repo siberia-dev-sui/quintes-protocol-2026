@@ -1,10 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { toast } from "sonner";
 import { Pill } from "./pill";
 import { Button } from "./ui/button";
-import { NETWORK_CONFIG } from "@/lib/network-config";
+import { supabase } from "@/lib/supabase";
+import { generateReferralCode } from "@/lib/referral";
+
+// =============================================================================
+// iEXEC BELLECOUR NETWORK CONFIG (The ONLY network where Web3Mail contracts work)
+// =============================================================================
+const IEXEC_BELLECOUR_CHAIN_ID = '0x86'; // Chain ID 134 in Hex
+const IEXEC_BELLECOUR_CONFIG = {
+    chainId: 134,
+    chainIdHex: '0x86',
+    chainName: 'iExec Bellecour',
+    rpcUrl: 'https://bellecour.iex.ec',
+    blockExplorer: 'https://blockscout-bellecour.iex.ec',
+    nativeCurrency: { name: 'xRLC', symbol: 'xRLC', decimals: 18 }
+};
 
 // =============================================================================
 // iEXEC WEB3MAIL INTEGRATION (User Pays Gas)
@@ -36,22 +50,23 @@ async function initializeWeb3Mail() {
 }
 
 /**
- * Check and switch to Arbitrum Sepolia network
+ * Switch to iExec Bellecour network (CRITICAL FIX)
+ * This is the ONLY network where the Web3Mail contracts are deployed.
  */
-async function ensureCorrectNetwork(): Promise<boolean> {
+async function switchNetworkToBellecour(): Promise<boolean> {
     if (!window.ethereum) return false;
 
     try {
         const chainId = await window.ethereum.request({ method: 'eth_chainId' });
         const currentChainId = parseInt(chainId as unknown as string, 16);
 
-        if (currentChainId === NETWORK_CONFIG.chainId) return true;
+        if (currentChainId === IEXEC_BELLECOUR_CONFIG.chainId) return true;
 
         // Try to switch network
         try {
             await window.ethereum.request({
                 method: 'wallet_switchEthereumChain',
-                params: [{ chainId: NETWORK_CONFIG.chainIdHex }]
+                params: [{ chainId: IEXEC_BELLECOUR_CHAIN_ID }]
             });
             return true;
         } catch (switchError: unknown) {
@@ -60,11 +75,11 @@ async function ensureCorrectNetwork(): Promise<boolean> {
                 await window.ethereum.request({
                     method: 'wallet_addEthereumChain',
                     params: [{
-                        chainId: NETWORK_CONFIG.chainIdHex,
-                        chainName: NETWORK_CONFIG.chainName,
-                        nativeCurrency: NETWORK_CONFIG.nativeCurrency,
-                        rpcUrls: [NETWORK_CONFIG.rpcUrl],
-                        blockExplorerUrls: [NETWORK_CONFIG.blockExplorer]
+                        chainId: IEXEC_BELLECOUR_CHAIN_ID,
+                        chainName: IEXEC_BELLECOUR_CONFIG.chainName,
+                        nativeCurrency: IEXEC_BELLECOUR_CONFIG.nativeCurrency,
+                        rpcUrls: [IEXEC_BELLECOUR_CONFIG.rpcUrl],
+                        blockExplorerUrls: [IEXEC_BELLECOUR_CONFIG.blockExplorer]
                     }]
                 });
                 return true;
@@ -78,7 +93,7 @@ async function ensureCorrectNetwork(): Promise<boolean> {
 }
 
 // =============================================================================
-// COMPONENT
+// COMPONENT (Wrapped in Suspense for Next.js static build compatibility)
 // =============================================================================
 
 type TabMode = 'free' | 'premium';
@@ -138,10 +153,10 @@ export function WhitelistSection() {
             });
 
             if (accounts && accounts.length > 0) {
-                // Check/switch network
-                const correctNetwork = await ensureCorrectNetwork();
+                // Check/switch network to iExec Bellecour
+                const correctNetwork = await switchNetworkToBellecour();
                 if (!correctNetwork) {
-                    toast.warning(`Please switch to ${NETWORK_CONFIG.chainName} in MetaMask`);
+                    toast.warning(`Please switch to ${IEXEC_BELLECOUR_CONFIG.chainName} in MetaMask`);
                     setIsConnecting(false);
                     return;
                 }
@@ -172,10 +187,10 @@ export function WhitelistSection() {
         setSubmitStatus("Initializing...");
 
         try {
-            // Ensure correct network
-            const correctNetwork = await ensureCorrectNetwork();
+            // Ensure correct network (Bellecour - where iExec contracts live)
+            const correctNetwork = await switchNetworkToBellecour();
             if (!correctNetwork) {
-                throw new Error(`Please switch to ${NETWORK_CONFIG.chainName}`);
+                throw new Error(`Please switch to ${IEXEC_BELLECOUR_CONFIG.chainName}`);
             }
 
             // Initialize iExec SDKs (uses user's wallet)
@@ -192,15 +207,15 @@ export function WhitelistSection() {
             console.log("✅ Email protected:", protectedData.address);
 
             // STEP 2: Grant Access to Web3Mail App (User signs TX #2)
-            // This allows the Web3Mail iApp to process the protected email
+            // SECURITY FIX: Only the wallet owner can authorize email sending
             setSubmitStatus("🔑 Granting access...");
             await dataProtector.grantAccess({
                 protectedData: protectedData.address,
                 authorizedApp: WEB3MAIL_APP_WHITELIST, // iExec Web3Mail whitelist
-                authorizedUser: '0x0000000000000000000000000000000000000000', // Allow any user (sender)
+                authorizedUser: walletAddress, // SECURITY FIX: Only YOU can use your data
                 numberOfAccess: 1000 // Allow multiple emails to be sent
             });
-            console.log("✅ Access granted to Web3Mail");
+            console.log("✅ Access granted to Web3Mail (secured to owner)");
 
             // STEP 3: Send Confirmation Email (User signs TX #3)
             setSubmitStatus("📨 Sending confirmation...");
@@ -232,9 +247,27 @@ export function WhitelistSection() {
             });
             console.log("✅ Email sent successfully");
 
+            // STEP 4: Save to Supabase (Data Persistence Fix)
+            setSubmitStatus("📝 Saving your profile...");
+            const refCode = generateReferralCode();
+            const { error: dbError } = await supabase
+                .from('whitelist_users')
+                .insert([{
+                    wallet_address: walletAddress,
+                    protected_data_address: protectedData.address,
+                    referral_code: refCode,
+                    status: 'active'
+                }]);
+
+            if (dbError) {
+                console.error("DB Error (non-fatal):", dbError);
+                // Don't fail the whole flow, blockchain part succeeded
+            }
+
             // Success!
             setPremiumSuccess(true);
             setSubmitStatus("✅ Successfully whitelisted!");
+            toast.success("You're in!", { description: `Your referral code: ${refCode}` });
 
         } catch (error: unknown) {
             console.error("❌ iExec Whitelist Error:", error);
@@ -425,7 +458,7 @@ export function WhitelistSection() {
                                     </Button>
 
                                     <p className="font-mono text-xs text-foreground/40 text-center">
-                                        ⚠️ Requires ETH on Arbitrum Sepolia for gas
+                                        ⚠️ Requires xRLC on iExec Bellecour (usually gasless)
                                     </p>
                                 </div>
                             ) : (
@@ -466,10 +499,19 @@ export function WhitelistSection() {
                 </div>
 
                 <p className="font-mono text-xs text-foreground/40 mt-10">
-                    Powered by Arbitrum & iExec
+                    Powered by iExec Bellecour & Web3Mail
                 </p>
             </div>
         </section>
+    );
+}
+
+// Wrapper with Suspense for Next.js static build compatibility
+export function WhitelistSectionWrapper() {
+    return (
+        <Suspense fallback={<div className="py-32 text-center font-mono text-foreground/40">Cargando whitelist...</div>}>
+            <WhitelistSection />
+        </Suspense>
     );
 }
 
