@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "./logo";
+import { Book, Mail } from "lucide-react";
 
 export function Footer() {
     return (
@@ -15,8 +16,9 @@ export function Footer() {
 
                     <div className="flex items-center gap-8">
                         <Link
-                            href="https://t.me/QuintesProtocol"
+                            href="https://t.me/Quintes_Official"
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="font-mono text-sm text-foreground/60 hover:text-foreground transition-colors flex items-center gap-2"
                             title="Telegram"
                         >
@@ -26,8 +28,9 @@ export function Footer() {
                             Telegram
                         </Link>
                         <Link
-                            href="https://discord.gg/quintes"
+                            href="https://discord.com/invite/beKCMah6zh"
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="font-mono text-sm text-foreground/60 hover:text-foreground transition-colors flex items-center gap-2"
                             title="Discord"
                         >
@@ -37,8 +40,40 @@ export function Footer() {
                             Discord
                         </Link>
                         <Link
+                            href="https://x.com/Quintesorg"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-sm text-foreground/60 hover:text-foreground transition-colors flex items-center gap-2"
+                            title="X (Twitter)"
+                        >
+                            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.045 4.126H5.078z" />
+                            </svg>
+                        </Link>
+                        <Link
+                            href="https://quintes.gitbook.io/quintes"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-sm text-foreground/60 hover:text-foreground transition-colors flex items-center gap-2"
+                            title="Documentation"
+                        >
+                            <Book className="w-4 h-4" />
+                            Docs
+                        </Link>
+                        <Link
+                            href="mailto:Rand@quintes.org"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-mono text-sm text-foreground/60 hover:text-foreground transition-colors flex items-center gap-2"
+                            title="Email"
+                        >
+                            <Mail className="w-4 h-4" />
+                            Email
+                        </Link>
+                        <Link
                             href="https://paragraph.xyz/@quintes"
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="font-mono text-sm text-foreground/60 hover:text-foreground transition-colors flex items-center gap-2"
                             title="Paragraph Blog"
                         >
@@ -46,17 +81,6 @@ export function Footer() {
                                 <path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2m0 2v14h10V5H7m2 2h6v2H9V7m0 4h6v2H9v-2m0 4h4v2H9v-2z" />
                             </svg>
                             Blog
-                        </Link>
-                        <Link
-                            href="https://x.com/QuintesProtocol"
-                            target="_blank"
-                            className="font-mono text-sm text-foreground/60 hover:text-foreground transition-colors flex items-center gap-2"
-                            title="X (Twitter)"
-                        >
-                            <svg viewBox="0 0 1200 1227" fill="currentColor" className="w-4 h-4">
-                                <path d="M714.163 519.284L1160.89 0H1055.03L667.137 450.887L357.328 0H0L468.492 681.821L0 1226.37H105.866L515.491 750.218L842.672 1226.37H1200L714.137 519.284H714.163ZM569.165 687.828L521.697 619.934L144.011 79.6944H306.615L611.412 515.685L658.88 583.579L1055.08 1150.3H892.476L569.165 687.854V687.828Z" />
-                            </svg>
-                            X
                         </Link>
                     </div>
                 </div>
