@@ -1,15 +1,25 @@
+import { randomBytes } from 'crypto';
+
 /**
- * Generates a random alphanumeric referral code.
- * Format: 8 characters, uppercase, alphanumeric.
+ * Generates a cryptographically secure referral code.
+ * 
+ * SECURITY: Uses crypto.randomBytes() instead of Math.random()
+ * Math.random() is predictable (PRNG) and can be exploited by attackers
+ * to guess valid referral codes in a financial/Web3 protocol.
+ * 
+ * Format: 8 characters, uppercase hexadecimal (0-9, A-F)
+ * Entropy: 32 bits (4 bytes) = 4.29 billion possible codes
  */
 export function generateReferralCode(): string {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    const length = 8;
+    // 4 bytes = 8 hex characters, cryptographically secure
+    return randomBytes(4).toString('hex').toUpperCase();
+}
 
-    for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-
-    return result;
+/**
+ * Validates a referral code format.
+ * @param code - The code to validate
+ * @returns true if valid 8-char uppercase hex
+ */
+export function isValidReferralCode(code: string): boolean {
+    return /^[0-9A-F]{8}$/.test(code);
 }

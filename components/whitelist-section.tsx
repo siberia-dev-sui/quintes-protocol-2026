@@ -6,6 +6,9 @@ import { Pill } from "./pill";
 import { Button } from "./ui/button";
 import { supabase } from "@/lib/supabase";
 import { generateReferralCode } from "@/lib/referral";
+import { logger, sanitizeForLog } from "@/utils/logger";
+// REMOVED: Gasless sponsor mode disabled - User pays gas directly
+// import { requestSponsoredWhitelist } from "@/lib/gasless/sponsor-client";
 
 // =============================================================================
 // iEXEC BELLECOUR NETWORK CONFIG (The ONLY network where Web3Mail contracts work)
@@ -21,7 +24,7 @@ const IEXEC_BELLECOUR_CONFIG = {
 };
 
 // =============================================================================
-// iEXEC WEB3MAIL INTEGRATION (User Pays Gas)
+// iEXEC WEB3MAIL INTEGRATION (Gasless - Sponsor pays gas)
 // =============================================================================
 
 // Web3Mail iApp whitelist address (supports all versions)
@@ -54,24 +57,38 @@ async function initializeWeb3Mail() {
  * This is the ONLY network where the Web3Mail contracts are deployed.
  */
 async function switchNetworkToBellecour(): Promise<boolean> {
-    if (!window.ethereum) return false;
+    console.log('[DEBUG] switchNetworkToBellecour: Starting...');
+    if (!window.ethereum) {
+        console.log('[DEBUG] switchNetworkToBellecour: No window.ethereum');
+        return false;
+    }
 
     try {
+        console.log('[DEBUG] Getting current chainId...');
         const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        console.log('[DEBUG] Current chainId:', chainId);
         const currentChainId = parseInt(chainId as unknown as string, 16);
+        console.log('[DEBUG] Parsed chainId:', currentChainId);
 
-        if (currentChainId === IEXEC_BELLECOUR_CONFIG.chainId) return true;
+        if (currentChainId === IEXEC_BELLECOUR_CONFIG.chainId) {
+            console.log('[DEBUG] Already on Bellecour!');
+            return true;
+        }
 
         // Try to switch network
+        console.log('[DEBUG] Switching to Bellecour...');
         try {
             await window.ethereum.request({
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: IEXEC_BELLECOUR_CHAIN_ID }]
             });
+            console.log('[DEBUG] Network switched successfully!');
             return true;
         } catch (switchError: unknown) {
+            console.log('[DEBUG] Switch error:', switchError);
             // Network not added, try to add it
             if ((switchError as { code: number }).code === 4902) {
+                console.log('[DEBUG] Network not found, adding Bellecour...');
                 await window.ethereum.request({
                     method: 'wallet_addEthereumChain',
                     params: [{
@@ -82,12 +99,13 @@ async function switchNetworkToBellecour(): Promise<boolean> {
                         blockExplorerUrls: [IEXEC_BELLECOUR_CONFIG.blockExplorer]
                     }]
                 });
+                console.log('[DEBUG] Network added successfully!');
                 return true;
             }
             throw switchError;
         }
     } catch (error) {
-        console.error('Network switch error:', error);
+        console.error('[DEBUG] Network switch error:', error);
         return false;
     }
 }
@@ -126,7 +144,7 @@ export function WhitelistSection() {
         e.preventDefault();
         if (email) {
             setFreeSubmitted(true);
-            console.log("Whitelist signup (FREE):", email);
+            logger.info("Whitelist signup (FREE):", sanitizeForLog(email));
             // TODO: Send to backend/database
         }
     };
@@ -147,14 +165,19 @@ export function WhitelistSection() {
         }
 
         setIsConnecting(true);
+        console.log('[DEBUG] connectWallet: Starting connection...');
         try {
+            console.log('[DEBUG] Requesting accounts...');
             const accounts = await window.ethereum.request({
                 method: "eth_requestAccounts"
             });
+            console.log('[DEBUG] Accounts received:', accounts);
 
             if (accounts && accounts.length > 0) {
+                console.log('[DEBUG] Account found:', accounts[0]);
                 // Check/switch network to iExec Bellecour
                 const correctNetwork = await switchNetworkToBellecour();
+                console.log('[DEBUG] Network switch result:', correctNetwork);
                 if (!correctNetwork) {
                     toast.warning(`Please switch to ${IEXEC_BELLECOUR_CONFIG.chainName} in MetaMask`);
                     setIsConnecting(false);
@@ -163,12 +186,34 @@ export function WhitelistSection() {
 
                 setWalletAddress(accounts[0]);
                 setWalletConnected(true);
+                console.log('[DEBUG] Wallet connected successfully!');
+            } else {
+                console.log('[DEBUG] No accounts received');
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Connection error:", error);
-            toast.error("Failed to connect wallet", {
-                description: "Please try again."
-            });
+
+            // Handle specific MetaMask errors
+            const errorCode = (error as { code?: number })?.code;
+            const errorMessage = (error as { message?: string })?.message || "";
+
+            if (errorCode === 4001 || errorMessage.includes("User rejected")) {
+                toast.error("Connection Rejected", {
+                    description: "You rejected the connection request in MetaMask."
+                });
+            } else if (errorCode === -32002 || errorMessage.includes("pending")) {
+                toast.warning("Request Pending", {
+                    description: "Please check MetaMask - there may be a pending request."
+                });
+            } else if (errorMessage.includes("unlock")) {
+                toast.error("Wallet Locked", {
+                    description: "Please unlock MetaMask and try again."
+                });
+            } else {
+                toast.error("Failed to connect wallet", {
+                    description: "Please make sure MetaMask is unlocked and try again."
+                });
+            }
         } finally {
             setIsConnecting(false);
         }
@@ -204,7 +249,7 @@ export function WhitelistSection() {
                 data: { email: proEmail },
                 name: `Quintes Whitelist - ${walletAddress.slice(0, 8)}`
             });
-            console.log("✅ Email protected:", protectedData.address);
+            logger.info("Email protected:", protectedData.address);
 
             // STEP 2: Grant Access to Web3Mail App (User signs TX #2)
             // SECURITY FIX: Only the wallet owner can authorize email sending
@@ -215,7 +260,7 @@ export function WhitelistSection() {
                 authorizedUser: walletAddress, // SECURITY FIX: Only YOU can use your data
                 numberOfAccess: 1000 // Allow multiple emails to be sent
             });
-            console.log("✅ Access granted to Web3Mail (secured to owner)");
+            logger.info("Access granted to Web3Mail (secured to owner)");
 
             // STEP 3: Send Confirmation Email (User signs TX #3)
             setSubmitStatus("📨 Sending confirmation...");
@@ -245,13 +290,13 @@ export function WhitelistSection() {
                     </html>
                 `
             });
-            console.log("✅ Email sent successfully");
+            logger.info("Email sent successfully");
 
             // STEP 4: Save to Supabase (Data Persistence Fix)
             setSubmitStatus("📝 Saving your profile...");
             const refCode = generateReferralCode();
             const { error: dbError } = await supabase
-                .from('whitelist_users')
+                .from('whitelist_participants')
                 .insert([{
                     wallet_address: walletAddress,
                     protected_data_address: protectedData.address,
@@ -260,7 +305,7 @@ export function WhitelistSection() {
                 }]);
 
             if (dbError) {
-                console.error("DB Error (non-fatal):", dbError);
+                logger.error("DB Error (non-fatal):", dbError);
                 // Don't fail the whole flow, blockchain part succeeded
             }
 
@@ -270,11 +315,27 @@ export function WhitelistSection() {
             toast.success("You're in!", { description: `Your referral code: ${refCode}` });
 
         } catch (error: unknown) {
-            console.error("❌ iExec Whitelist Error:", error);
+            logger.error("iExec Whitelist Error:", error);
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            toast.error("Registration failed", {
-                description: errorMessage
-            });
+
+            // Handle specific error cases with user-friendly messages
+            if (errorMessage.includes("user rejected") || errorMessage.includes("User denied")) {
+                toast.error("Transaction Cancelled", {
+                    description: "You rejected the transaction in your wallet."
+                });
+            } else if (errorMessage.includes("insufficient funds") || errorMessage.includes("gas")) {
+                toast.error("Insufficient Funds", {
+                    description: "You need xRLC on iExec Bellecour to pay for gas. Get free xRLC at faucet.iex.ec",
+                    action: {
+                        label: "Get xRLC",
+                        onClick: () => window.open("https://faucet.iex.ec/", "_blank")
+                    }
+                });
+            } else {
+                toast.error("Registration failed", {
+                    description: errorMessage
+                });
+            }
             setSubmitStatus("");
         } finally {
             setIsSubmitting(false);
@@ -458,7 +519,7 @@ export function WhitelistSection() {
                                     </Button>
 
                                     <p className="font-mono text-xs text-foreground/40 text-center">
-                                        ⚠️ Requires xRLC on iExec Bellecour (usually gasless)
+                                        ⚠️ You pay gas fees in xRLC. <a href="https://faucet.iex.ec/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get free xRLC →</a>
                                     </p>
                                 </div>
                             ) : (

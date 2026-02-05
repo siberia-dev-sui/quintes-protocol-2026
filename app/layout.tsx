@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Header } from "@/components/header";
 import { Toaster } from "sonner";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -45,7 +46,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Header />
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
         <Toaster richColors position="bottom-right" />
       </body>
     </html>
