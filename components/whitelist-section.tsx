@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useRef } from "react";
 import { toast } from "sonner";
 import { Pill } from "./pill";
 import { Button } from "./ui/button";
+import { WalletModal } from "./wallet-modal";
 import { supabase } from "@/lib/supabase";
 import { generateReferralCode } from "@/lib/referral";
 import { logger, sanitizeForLog } from "@/utils/logger";
@@ -237,6 +238,7 @@ export function WhitelistSection() {
     const [email, setEmail] = useState("");
     const [freeSubmitted, setFreeSubmitted] = useState(false);
 
+
     // PREMIUM version state
     const [proEmail, setProEmail] = useState("");
     const [walletConnected, setWalletConnected] = useState(false);
@@ -246,8 +248,22 @@ export function WhitelistSection() {
     const [submitStatus, setSubmitStatus] = useState("");
     const [premiumSuccess, setPremiumSuccess] = useState(false);
 
+    // Wallet Modal state
+    const [showWalletModal, setShowWalletModal] = useState(false);
+    const connectedProviderRef = useRef<any>(null);
+
     const shortenAddress = (address: string) => {
         return address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
+    };
+
+    // Handle wallet connection from modal
+    const handleWalletConnect = (address: string, provider: any) => {
+        setWalletAddress(address);
+        setWalletConnected(true);
+        connectedProviderRef.current = provider;
+        toast.success("Wallet Connected", {
+            description: `Connected to ${address.slice(0, 6)}...${address.slice(-4)}`
+        });
     };
 
     // =========================================================================
@@ -643,21 +659,11 @@ export function WhitelistSection() {
                                 // Not Connected - Show Connect Button
                                 <div className="space-y-4">
                                     <Button
-                                        onClick={connectWallet}
-                                        disabled={isConnecting}
+                                        onClick={() => setShowWalletModal(true)}
                                         size="sm"
                                         className="w-full hover:scale-105 hover:-translate-y-0.5 transition-transform duration-300"
                                     >
-                                        {isConnecting ? (
-                                            <>
-                                                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                    <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="8" />
-                                                </svg>
-                                                Connecting...
-                                            </>
-                                        ) : (
-                                            "[Connect Wallet]"
-                                        )}
+                                        [Connect Wallet]
                                     </Button>
 
                                     {/* Trust signal: iExec badge with shield icon */}
@@ -680,6 +686,14 @@ export function WhitelistSection() {
                     Powered by iExec Bellecour & Web3Mail
                 </p>
             </div>
+
+            {/* Wallet Connection Modal */}
+            <WalletModal
+                isOpen={showWalletModal}
+                onClose={() => setShowWalletModal(false)}
+                onConnect={handleWalletConnect}
+                targetChainId={134}
+            />
         </section>
     );
 }
