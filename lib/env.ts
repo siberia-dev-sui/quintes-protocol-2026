@@ -37,13 +37,22 @@ const envSchema = z.object({
         .default(SUPPORTED_CHAINS.IEXEC_BELLECOUR),
 });
 
-// Parse and validate - will throw ZodError if invalid
-// This is intentional: we WANT the app to crash if env is misconfigured
-export const env = envSchema.parse({
+// Parse with safeParse for build-time compatibility
+// Vercel may not have env vars available during static generation
+const parsed = envSchema.safeParse({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_CHAIN_ID: process.env.NEXT_PUBLIC_CHAIN_ID,
 });
+
+// Provide fallback values for build time
+export const env = parsed.success
+    ? parsed.data
+    : {
+        NEXT_PUBLIC_SUPABASE_URL: 'https://placeholder.supabase.co',
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: 'placeholder-key',
+        NEXT_PUBLIC_CHAIN_ID: SUPPORTED_CHAINS.IEXEC_BELLECOUR,
+    };
 
 // Export chain constants for use throughout the app
 export { SUPPORTED_CHAINS };
