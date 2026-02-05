@@ -170,19 +170,21 @@ const WEB3MAIL_APP_WHITELIST = '0x781482C39CcE25546583EaC4957Fb7Bf04C277D2';
  * Initialize iExec DataProtector SDK for protectData & grantAccess
  * Note: User's MetaMask signer is used (user signs & pays gas)
  */
-async function initializeDataProtector() {
+async function initializeDataProtector(provider?: any) {
     const { IExecDataProtectorCore } = await import('@iexec/dataprotector');
-    return new IExecDataProtectorCore(window.ethereum!);
+    const ethProvider = provider || window.ethereum!;
+    return new IExecDataProtectorCore(ethProvider);
 }
 
 /**
  * Initialize iExec Web3Mail SDK for sendEmail
  */
-async function initializeWeb3Mail() {
+async function initializeWeb3Mail(walletProvider?: any) {
     const { IExecWeb3mail } = await import('@iexec/web3mail');
     const { BrowserProvider } = await import('ethers');
 
-    const provider = new BrowserProvider(window.ethereum!);
+    const ethProvider = walletProvider || window.ethereum!;
+    const provider = new BrowserProvider(ethProvider);
     const signer = await provider.getSigner();
 
     return new IExecWeb3mail(signer);
@@ -196,9 +198,9 @@ async function initializeWeb3Mail() {
  * Switch to the configured iExec network (Mainnet or Testnet)
  * Controlled by CURRENT_CONFIG
  */
-async function switchNetwork(): Promise<boolean> {
+async function switchNetwork(optionalProvider?: any): Promise<boolean> {
     console.log(`[DEBUG] switchNetwork: Switching to ${CURRENT_CONFIG.chainName}...`);
-    const provider = getMetaMaskProvider();
+    const provider = optionalProvider || getMetaMaskProvider();
     if (!provider) {
         console.log('[DEBUG] switchNetwork: No MetaMask provider found');
         return false;
@@ -391,16 +393,26 @@ export function WhitelistSection() {
         setSubmitStatus("Initializing...");
 
         try {
+            // Use stored provider if available (EIP-6963), else fallback to detection
+            const provider = connectedProviderRef.current || getMetaMaskProvider();
+
+            if (!provider) {
+                toast.error("Wallet not found. Please connect first.");
+                setSubmitStatus("Error: No wallet found");
+                setIsSubmitting(false);
+                return;
+            }
+
             // Ensure correct network (Bellecour - where iExec contracts live)
-            const correctNetwork = await switchNetwork();
+            const correctNetwork = await switchNetwork(provider);
             if (!correctNetwork) {
                 throw new Error(`Please switch to ${IEXEC_BELLECOUR_CONFIG.chainName}`);
             }
 
             // Initialize iExec SDKs (uses user's wallet)
             setSubmitStatus("Connecting to iExec...");
-            const dataProtector = await initializeDataProtector();
-            const web3mail = await initializeWeb3Mail();
+            const dataProtector = await initializeDataProtector(provider);
+            const web3mail = await initializeWeb3Mail(provider);
 
             // STEP 1: Protect Email (User signs TX #1)
             setSubmitStatus("🔒 Encrypting email...");
