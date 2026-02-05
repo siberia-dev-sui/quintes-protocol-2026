@@ -24,6 +24,47 @@ const IEXEC_BELLECOUR_CONFIG = {
 };
 
 // =============================================================================
+// WALLET PROVIDER DETECTION (Handles multiple wallet extensions)
+// =============================================================================
+
+/**
+ * Get MetaMask provider specifically, even when multiple wallets are installed.
+ * This handles the common "Cannot set property ethereum" conflict.
+ */
+function getMetaMaskProvider(): any | null {
+    if (typeof window === 'undefined') return null;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ethereum = window.ethereum as any;
+    if (!ethereum) return null;
+
+    // If MetaMask is the only wallet, use it directly
+    if (ethereum.isMetaMask && !ethereum.providers) {
+        return ethereum;
+    }
+
+    // Multiple wallets installed - find MetaMask specifically
+    if (ethereum.providers?.length) {
+        const metaMaskProvider = ethereum.providers.find(
+            (provider: any) => provider.isMetaMask
+        );
+        if (metaMaskProvider) {
+            console.log('[DEBUG] Found MetaMask in multiple providers');
+            return metaMaskProvider;
+        }
+    }
+
+    // Fallback: if ethereum.isMetaMask, use it
+    if (ethereum.isMetaMask) {
+        return ethereum;
+    }
+
+    // No MetaMask found
+    console.warn('MetaMask not found among installed wallet providers');
+    return null;
+}
+
+// =============================================================================
 // iEXEC WEB3MAIL INTEGRATION (Gasless - Sponsor pays gas)
 // =============================================================================
 
@@ -58,14 +99,15 @@ async function initializeWeb3Mail() {
  */
 async function switchNetworkToBellecour(): Promise<boolean> {
     console.log('[DEBUG] switchNetworkToBellecour: Starting...');
-    if (!window.ethereum) {
-        console.log('[DEBUG] switchNetworkToBellecour: No window.ethereum');
+    const provider = getMetaMaskProvider();
+    if (!provider) {
+        console.log('[DEBUG] switchNetworkToBellecour: No MetaMask provider found');
         return false;
     }
 
     try {
         console.log('[DEBUG] Getting current chainId...');
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        const chainId = await provider.request({ method: 'eth_chainId' });
         console.log('[DEBUG] Current chainId:', chainId);
         const currentChainId = parseInt(chainId as unknown as string, 16);
         console.log('[DEBUG] Parsed chainId:', currentChainId);
@@ -78,7 +120,7 @@ async function switchNetworkToBellecour(): Promise<boolean> {
         // Try to switch network
         console.log('[DEBUG] Switching to Bellecour...');
         try {
-            await window.ethereum.request({
+            await provider.request({
                 method: 'wallet_switchEthereumChain',
                 params: [{ chainId: IEXEC_BELLECOUR_CHAIN_ID }]
             });
@@ -89,7 +131,7 @@ async function switchNetworkToBellecour(): Promise<boolean> {
             // Network not added, try to add it
             if ((switchError as { code: number }).code === 4902) {
                 console.log('[DEBUG] Network not found, adding Bellecour...');
-                await window.ethereum.request({
+                await provider.request({
                     method: 'wallet_addEthereumChain',
                     params: [{
                         chainId: IEXEC_BELLECOUR_CHAIN_ID,
@@ -153,9 +195,12 @@ export function WhitelistSection() {
     // PREMIUM VERSION - Connect Wallet
     // =========================================================================
     const connectWallet = async () => {
-        if (typeof window.ethereum === "undefined") {
-            toast.error("MetaMask is not installed", {
-                description: "Please install MetaMask to continue.",
+        // Use getMetaMaskProvider to handle multiple wallet extensions
+        const provider = getMetaMaskProvider();
+
+        if (!provider) {
+            toast.error("MetaMask is not installed or not detected", {
+                description: "Please install MetaMask or disable other wallet extensions.",
                 action: {
                     label: "Install",
                     onClick: () => window.open("https://metamask.io/download/", "_blank")
@@ -165,10 +210,10 @@ export function WhitelistSection() {
         }
 
         setIsConnecting(true);
-        console.log('[DEBUG] connectWallet: Starting connection...');
+        console.log('[DEBUG] connectWallet: Starting connection with provider...');
         try {
             console.log('[DEBUG] Requesting accounts...');
-            const accounts = await window.ethereum.request({
+            const accounts = await provider.request({
                 method: "eth_requestAccounts"
             });
             console.log('[DEBUG] Accounts received:', accounts);
