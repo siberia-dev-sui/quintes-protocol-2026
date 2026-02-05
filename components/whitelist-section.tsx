@@ -412,10 +412,10 @@ export function WhitelistSection() {
                 });
             } else if (errorMessage.includes("insufficient funds") || errorMessage.includes("gas")) {
                 toast.error("Insufficient Funds", {
-                    description: "You need xRLC on iExec Bellecour to pay for gas. Get free xRLC at faucet.iex.ec",
+                    description: "You need xRLC on iExec Bellecour to pay for gas. Get xRLC via the iExec Bridge.",
                     action: {
                         label: "Get xRLC",
-                        onClick: () => window.open("https://faucet.iex.ec/", "_blank")
+                        onClick: () => window.open("https://docs.iex.ec/get-started/tooling-and-explorers/bridge", "_blank")
                     }
                 });
             } else {
@@ -606,7 +606,7 @@ export function WhitelistSection() {
                                     </Button>
 
                                     <p className="font-mono text-xs text-foreground/40 text-center">
-                                        ⚠️ You pay gas fees in xRLC. <a href="https://faucet.iex.ec/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get free xRLC →</a>
+                                        ⚠️ You pay gas fees in xRLC. <a href="https://docs.iex.ec/get-started/tooling-and-explorers/bridge" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get xRLC →</a>
                                     </p>
                                 </div>
                             ) : (
