@@ -24,19 +24,65 @@ const IEXEC_BELLECOUR_CONFIG = {
 };
 
 // =============================================================================
-// WALLET PROVIDER DETECTION (Handles multiple wallet extensions)
+// WALLET PROVIDER DETECTION (EIP-6963 + Legacy Support)
 // =============================================================================
 
+// Store for EIP-6963 discovered providers
+let eip6963Providers: Array<{ info: { rdns: string; name: string }; provider: any }> = [];
+let eip6963Initialized = false;
+
 /**
- * Get MetaMask provider specifically, even when multiple wallets are installed.
- * This handles the common "Cannot set property ethereum" conflict.
- * 
- * IMPORTANT: Many crypto users have multiple wallet extensions (MetaMask, Rabby, 
- * Coinbase, Phantom, etc). This function finds MetaMask specifically.
+ * Initialize EIP-6963 provider discovery (Modern standard - avoids window.ethereum conflicts)
+ * https://eips.ethereum.org/EIPS/eip-6963
+ */
+function initEIP6963() {
+    if (typeof window === 'undefined' || eip6963Initialized) return;
+
+    eip6963Initialized = true;
+
+    // Listen for wallet announcements
+    window.addEventListener('eip6963:announceProvider', (event: any) => {
+        const { info, provider } = event.detail;
+        console.log('[DEBUG] EIP-6963: Wallet announced:', info.name, info.rdns);
+
+        // Don't add duplicates
+        if (!eip6963Providers.find(p => p.info.rdns === info.rdns)) {
+            eip6963Providers.push({ info, provider });
+        }
+    });
+
+    // Request all wallets to announce themselves
+    window.dispatchEvent(new Event('eip6963:requestProvider'));
+    console.log('[DEBUG] EIP-6963: Requested provider announcements');
+}
+
+/**
+ * Get MetaMask provider using EIP-6963 first, then legacy fallback
  */
 function getMetaMaskProvider(): any | null {
     if (typeof window === 'undefined') return null;
 
+    // Initialize EIP-6963 if not done
+    initEIP6963();
+
+    // Give wallets a moment to announce (they do so asynchronously)
+    // Check EIP-6963 providers first
+    const metamaskEIP6963 = eip6963Providers.find(p =>
+        p.info.rdns === 'io.metamask' ||
+        p.info.name.toLowerCase().includes('metamask')
+    );
+
+    if (metamaskEIP6963) {
+        console.log('[DEBUG] ✅ Found MetaMask via EIP-6963:', metamaskEIP6963.info.name);
+        return metamaskEIP6963.provider;
+    }
+
+    // Log all discovered providers for debugging
+    if (eip6963Providers.length > 0) {
+        console.log('[DEBUG] EIP-6963 providers found:', eip6963Providers.map(p => p.info.name));
+    }
+
+    // === LEGACY FALLBACK (window.ethereum) ===
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ethereum = window.ethereum as any;
     if (!ethereum) {
@@ -44,24 +90,11 @@ function getMetaMaskProvider(): any | null {
         return null;
     }
 
-    console.log('[DEBUG] Detecting wallet providers...', {
-        hasProviders: !!ethereum.providers,
-        providersCount: ethereum.providers?.length,
-        isMetaMask: ethereum.isMetaMask,
-        providerNames: ethereum.providers?.map((p: any) => ({
-            isMetaMask: p.isMetaMask,
-            isCoinbaseWallet: p.isCoinbaseWallet,
-            isRabby: p.isRabby,
-            isPhantom: p.isPhantom,
-        }))
-    });
+    console.log('[DEBUG] Falling back to legacy window.ethereum detection');
 
-    // Case 1: Multiple providers array exists (common with many wallets)
+    // Case 1: Multiple providers array exists
     if (ethereum.providers && Array.isArray(ethereum.providers)) {
-        // Find MetaMask specifically - it has isMetaMask = true
-        // But some wallets like Rabby also set isMetaMask, so we need to be careful
         const metaMaskProvider = ethereum.providers.find((provider: any) => {
-            // Real MetaMask: isMetaMask = true AND NOT other wallets
             return provider.isMetaMask &&
                 !provider.isCoinbaseWallet &&
                 !provider.isRabby &&
@@ -70,28 +103,25 @@ function getMetaMaskProvider(): any | null {
         });
 
         if (metaMaskProvider) {
-            console.log('[DEBUG] ✅ Found genuine MetaMask in providers array');
+            console.log('[DEBUG] ✅ Found MetaMask in legacy providers array');
             return metaMaskProvider;
         }
 
-        // Fallback: just find any with isMetaMask
+        // Just take first with isMetaMask
         const anyMetaMask = ethereum.providers.find((p: any) => p.isMetaMask);
         if (anyMetaMask) {
-            console.log('[DEBUG] ⚠️ Found provider with isMetaMask (may be another wallet)');
+            console.log('[DEBUG] ⚠️ Using first isMetaMask provider');
             return anyMetaMask;
         }
     }
 
-    // Case 2: Single provider with isMetaMask
-    if (ethereum.isMetaMask) {
-        // Check it's not actually another wallet pretending
-        if (!ethereum.isCoinbaseWallet && !ethereum.isRabby && !ethereum.isPhantom) {
-            console.log('[DEBUG] ✅ Found MetaMask as single provider');
-            return ethereum;
-        }
+    // Case 2: Single provider 
+    if (ethereum.isMetaMask && !ethereum.isCoinbaseWallet && !ethereum.isRabby) {
+        console.log('[DEBUG] ✅ Found MetaMask as single provider');
+        return ethereum;
     }
 
-    // Case 3: Try to find MetaMask in providerMap (some setups use this)
+    // Case 3: providerMap
     if (ethereum.providerMap) {
         const metamaskFromMap = ethereum.providerMap.get('MetaMask');
         if (metamaskFromMap) {
@@ -100,8 +130,8 @@ function getMetaMaskProvider(): any | null {
         }
     }
 
-    // Case 4: Last resort - return ethereum and hope for the best
-    console.warn('[DEBUG] ⚠️ Could not specifically identify MetaMask, using default ethereum');
+    // Last resort
+    console.warn('[DEBUG] ⚠️ Using default ethereum (may have conflicts)');
     return ethereum;
 }
 
