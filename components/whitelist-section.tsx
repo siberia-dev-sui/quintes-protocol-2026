@@ -8,7 +8,9 @@ import { WalletModal } from "./wallet-modal";
 import { supabase } from "@/lib/supabase";
 import { generateReferralCode } from "@/lib/referral";
 import { logger, sanitizeForLog } from "@/utils/logger";
-import { requestSponsoredWhitelist } from "@/lib/gasless/sponsor-client";
+// PRESERVED: Sponsorship module (commented out - User Pays Gas mode active)
+// To re-enable gasless mode, uncomment this import and the call in joinVerifiedWhitelist
+// import { requestSponsoredWhitelist } from "@/lib/gasless/sponsor-client";
 
 // =============================================================================
 // IEXEC NETWORK CONFIGURATION (Hybrid: Mainnet & Testnet)
@@ -408,6 +410,11 @@ export function WhitelistSection() {
                 throw new Error(`Please switch to ${IEXEC_BELLECOUR_CONFIG.chainName}`);
             }
 
+            // =====================================================================
+            // PRESERVED: SPONSORSHIP CODE (Commented - User Pays Gas mode active)
+            // To re-enable gasless mode, uncomment below and the import at top
+            // =====================================================================
+            /*
             // ATTEMPT SPONSORSHIP (Subsidy)
             // Try to get gas from backend before proceeding
             setSubmitStatus("Requesting gas subsidy...");
@@ -422,6 +429,7 @@ export function WhitelistSection() {
             } catch (err) {
                 console.warn("Sponsorship request error", err);
             }
+            */
 
             // Initialize iExec SDKs (uses user's wallet)
             setSubmitStatus("Connecting to iExec...");
