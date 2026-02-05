@@ -1,39 +1,50 @@
 /**
- * DEPRECATED: Sponsor Client - Gasless mode disabled
- * 
- * This module was used for the gasless/sponsor flow where a backend wallet
- * paid gas on behalf of users. This feature has been disabled.
- * 
- * Current flow: Users pay their own gas fees in xRLC on iExec Bellecour.
- * 
- * @deprecated Use direct iExec SDK in frontend instead
+ * Sponsor Client - Handles request for gas sponsorship (subsidy)
  */
 
-// All exports commented out - not in use
-
-/*
 const SPONSOR_API_URL = '/api/whitelist/sponsor';
 
 export interface SponsorResult {
     success: boolean;
-    protectedDataAddress?: string;
+    message?: string;
+    txHash?: string;
     error?: string;
 }
 
+/**
+ * Requests the backend to sponsor (fund) the user's wallet with xRLC for gas.
+ * This effectively makes the transaction "gasless" for the user.
+ */
 export async function requestSponsoredWhitelist(
     email: string,
-    userAddress: string,
-    signature?: string
+    userAddress: string
 ): Promise<SponsorResult> {
-    // ... deprecated code
-}
+    try {
+        const response = await fetch(SPONSOR_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, userAddress })
+        });
 
-export async function checkSponsorHealth(): Promise<{
-    available: boolean;
-    message?: string;
-}> {
-    // ... deprecated code
-}
-*/
+        const data = await response.json();
 
-export { }; // Empty export to keep TypeScript happy
+        if (!response.ok) {
+            return {
+                success: false,
+                error: data.error || 'Failed to request sponsorship'
+            };
+        }
+
+        return {
+            success: true,
+            message: data.message,
+            txHash: data.txHash
+        };
+    } catch (error) {
+        console.error('Sponsorship request failed:', error);
+        return {
+            success: false,
+            error: 'Network error requesting sponsorship'
+        };
+    }
+}

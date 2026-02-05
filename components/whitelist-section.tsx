@@ -8,8 +8,7 @@ import { WalletModal } from "./wallet-modal";
 import { supabase } from "@/lib/supabase";
 import { generateReferralCode } from "@/lib/referral";
 import { logger, sanitizeForLog } from "@/utils/logger";
-// REMOVED: Gasless sponsor mode disabled - User pays gas directly
-// import { requestSponsoredWhitelist } from "@/lib/gasless/sponsor-client";
+import { requestSponsoredWhitelist } from "@/lib/gasless/sponsor-client";
 
 // =============================================================================
 // IEXEC NETWORK CONFIGURATION (Hybrid: Mainnet & Testnet)
@@ -18,7 +17,7 @@ import { logger, sanitizeForLog } from "@/utils/logger";
 // 1. CONFIGURATION TOGGLE
 // 'mainnet' = iExec Bellecour (Production)
 // 'testnet' = Arbitrum Sepolia (Testing with free faucet tokens)
-const NETWORK_MODE = 'testnet' as 'mainnet' | 'testnet';
+const NETWORK_MODE = 'mainnet' as 'mainnet' | 'testnet';
 
 // 2. MAINNET CONFIG (iExec Bellecour)
 const IEXEC_BELLECOUR_CONFIG = {
@@ -407,6 +406,21 @@ export function WhitelistSection() {
             const correctNetwork = await switchNetwork(provider);
             if (!correctNetwork) {
                 throw new Error(`Please switch to ${IEXEC_BELLECOUR_CONFIG.chainName}`);
+            }
+
+            // ATTEMPT SPONSORSHIP (Subsidy)
+            // Try to get gas from backend before proceeding
+            setSubmitStatus("Requesting gas subsidy...");
+            try {
+                const sponsorResult = await requestSponsoredWhitelist(proEmail, walletAddress);
+                if (sponsorResult.success) {
+                    toast.success("Gas Subsidy Applied", { description: "Quintes covered your transaction fees." });
+                } else {
+                    console.warn("Sponsorship failed:", sponsorResult.error);
+                    // Continue anyway, user might have their own gas
+                }
+            } catch (err) {
+                console.warn("Sponsorship request error", err);
             }
 
             // Initialize iExec SDKs (uses user's wallet)
