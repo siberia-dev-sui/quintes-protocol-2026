@@ -297,15 +297,16 @@ export function WhitelistSection() {
             logger.info("Email protected:", protectedData.address);
 
             // STEP 2: Grant Access to Web3Mail App (User signs TX #2)
-            // SECURITY FIX: Only the wallet owner can authorize email sending
+            // NOTE: When using Web3Mail whitelist, authorizedUser must be zero address
+            // The whitelist contract handles authorization internally
             setSubmitStatus("🔑 Granting access...");
             await dataProtector.grantAccess({
                 protectedData: protectedData.address,
                 authorizedApp: WEB3MAIL_APP_WHITELIST, // iExec Web3Mail whitelist
-                authorizedUser: walletAddress, // SECURITY FIX: Only YOU can use your data
+                authorizedUser: '0x0000000000000000000000000000000000000000', // Zero address for whitelist
                 numberOfAccess: 1000 // Allow multiple emails to be sent
             });
-            logger.info("Access granted to Web3Mail (secured to owner)");
+            logger.info("Access granted to Web3Mail whitelist");
 
             // STEP 3: Send Confirmation Email (User signs TX #3)
             setSubmitStatus("📨 Sending confirmation...");
