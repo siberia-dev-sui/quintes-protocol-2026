@@ -68,8 +68,8 @@ function getMetaMaskProvider(): any | null {
 // iEXEC WEB3MAIL INTEGRATION (Gasless - Sponsor pays gas)
 // =============================================================================
 
-// Web3Mail iApp whitelist address (supports all versions)
-const WEB3MAIL_APP_WHITELIST = '0xD5054a18565c4a9E5c1aa3cEB53258bd59d4c78C';
+// Web3Mail iApp whitelist address (UPDATED - correct address from iExec docs)
+const WEB3MAIL_APP_WHITELIST = '0x781482C39CcE25546583EaC4957Fb7Bf04C277D2';
 
 /**
  * Initialize iExec DataProtector SDK for protectData & grantAccess
