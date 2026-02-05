@@ -30,38 +30,79 @@ const IEXEC_BELLECOUR_CONFIG = {
 /**
  * Get MetaMask provider specifically, even when multiple wallets are installed.
  * This handles the common "Cannot set property ethereum" conflict.
+ * 
+ * IMPORTANT: Many crypto users have multiple wallet extensions (MetaMask, Rabby, 
+ * Coinbase, Phantom, etc). This function finds MetaMask specifically.
  */
 function getMetaMaskProvider(): any | null {
     if (typeof window === 'undefined') return null;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ethereum = window.ethereum as any;
-    if (!ethereum) return null;
-
-    // If MetaMask is the only wallet, use it directly
-    if (ethereum.isMetaMask && !ethereum.providers) {
-        return ethereum;
+    if (!ethereum) {
+        console.log('[DEBUG] No window.ethereum found');
+        return null;
     }
 
-    // Multiple wallets installed - find MetaMask specifically
-    if (ethereum.providers?.length) {
-        const metaMaskProvider = ethereum.providers.find(
-            (provider: any) => provider.isMetaMask
-        );
+    console.log('[DEBUG] Detecting wallet providers...', {
+        hasProviders: !!ethereum.providers,
+        providersCount: ethereum.providers?.length,
+        isMetaMask: ethereum.isMetaMask,
+        providerNames: ethereum.providers?.map((p: any) => ({
+            isMetaMask: p.isMetaMask,
+            isCoinbaseWallet: p.isCoinbaseWallet,
+            isRabby: p.isRabby,
+            isPhantom: p.isPhantom,
+        }))
+    });
+
+    // Case 1: Multiple providers array exists (common with many wallets)
+    if (ethereum.providers && Array.isArray(ethereum.providers)) {
+        // Find MetaMask specifically - it has isMetaMask = true
+        // But some wallets like Rabby also set isMetaMask, so we need to be careful
+        const metaMaskProvider = ethereum.providers.find((provider: any) => {
+            // Real MetaMask: isMetaMask = true AND NOT other wallets
+            return provider.isMetaMask &&
+                !provider.isCoinbaseWallet &&
+                !provider.isRabby &&
+                !provider.isPhantom &&
+                !provider.isBraveWallet;
+        });
+
         if (metaMaskProvider) {
-            console.log('[DEBUG] Found MetaMask in multiple providers');
+            console.log('[DEBUG] ✅ Found genuine MetaMask in providers array');
             return metaMaskProvider;
+        }
+
+        // Fallback: just find any with isMetaMask
+        const anyMetaMask = ethereum.providers.find((p: any) => p.isMetaMask);
+        if (anyMetaMask) {
+            console.log('[DEBUG] ⚠️ Found provider with isMetaMask (may be another wallet)');
+            return anyMetaMask;
         }
     }
 
-    // Fallback: if ethereum.isMetaMask, use it
+    // Case 2: Single provider with isMetaMask
     if (ethereum.isMetaMask) {
-        return ethereum;
+        // Check it's not actually another wallet pretending
+        if (!ethereum.isCoinbaseWallet && !ethereum.isRabby && !ethereum.isPhantom) {
+            console.log('[DEBUG] ✅ Found MetaMask as single provider');
+            return ethereum;
+        }
     }
 
-    // No MetaMask found
-    console.warn('MetaMask not found among installed wallet providers');
-    return null;
+    // Case 3: Try to find MetaMask in providerMap (some setups use this)
+    if (ethereum.providerMap) {
+        const metamaskFromMap = ethereum.providerMap.get('MetaMask');
+        if (metamaskFromMap) {
+            console.log('[DEBUG] ✅ Found MetaMask in providerMap');
+            return metamaskFromMap;
+        }
+    }
+
+    // Case 4: Last resort - return ethereum and hope for the best
+    console.warn('[DEBUG] ⚠️ Could not specifically identify MetaMask, using default ethereum');
+    return ethereum;
 }
 
 // =============================================================================
