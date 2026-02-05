@@ -12,9 +12,15 @@ import { logger, sanitizeForLog } from "@/utils/logger";
 // import { requestSponsoredWhitelist } from "@/lib/gasless/sponsor-client";
 
 // =============================================================================
-// iEXEC BELLECOUR NETWORK CONFIG (The ONLY network where Web3Mail contracts work)
+// IEXEC NETWORK CONFIGURATION (Hybrid: Mainnet & Testnet)
 // =============================================================================
-const IEXEC_BELLECOUR_CHAIN_ID = '0x86'; // Chain ID 134 in Hex
+
+// 1. CONFIGURATION TOGGLE
+// 'mainnet' = iExec Bellecour (Production)
+// 'testnet' = Arbitrum Sepolia (Testing with free faucet tokens)
+const NETWORK_MODE = 'testnet' as 'mainnet' | 'testnet';
+
+// 2. MAINNET CONFIG (iExec Bellecour)
 const IEXEC_BELLECOUR_CONFIG = {
     chainId: 134,
     chainIdHex: '0x86',
@@ -23,6 +29,23 @@ const IEXEC_BELLECOUR_CONFIG = {
     blockExplorer: 'https://blockscout-bellecour.iex.ec',
     nativeCurrency: { name: 'xRLC', symbol: 'xRLC', decimals: 18 }
 };
+
+// 3. TESTNET CONFIG (Arbitrum Sepolia)
+// User has 5 RLC here from the faucet
+const IEXEC_TESTNET_CONFIG = {
+    chainId: 421614,
+    chainIdHex: '0x66eee',
+    chainName: 'Arbitrum Sepolia',
+    rpcUrl: 'https://sepolia-rollup.arbitrum.io/rpc',
+    blockExplorer: 'https://sepolia.arbiscan.io',
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 } // Uses ETH for gas usually, but RLC for iExec
+};
+
+// 4. ACTIVE CONFIGURATION
+const CURRENT_CONFIG = NETWORK_MODE === 'mainnet' ? IEXEC_BELLECOUR_CONFIG : IEXEC_TESTNET_CONFIG;
+const IEXEC_CHAIN_ID = NETWORK_MODE === 'mainnet' ? 134 : 421614;
+
+console.log(`[CONFIG] Running in ${NETWORK_MODE} mode on ${CURRENT_CONFIG.chainName}`);
 
 // =============================================================================
 // WALLET PROVIDER DETECTION (EIP-6963 + Legacy Support)
@@ -169,11 +192,15 @@ async function initializeWeb3Mail() {
  * Switch to iExec Bellecour network (CRITICAL FIX)
  * This is the ONLY network where the Web3Mail contracts are deployed.
  */
-async function switchNetworkToBellecour(): Promise<boolean> {
-    console.log('[DEBUG] switchNetworkToBellecour: Starting...');
+/**
+ * Switch to the configured iExec network (Mainnet or Testnet)
+ * Controlled by CURRENT_CONFIG
+ */
+async function switchNetwork(): Promise<boolean> {
+    console.log(`[DEBUG] switchNetwork: Switching to ${CURRENT_CONFIG.chainName}...`);
     const provider = getMetaMaskProvider();
     if (!provider) {
-        console.log('[DEBUG] switchNetworkToBellecour: No MetaMask provider found');
+        console.log('[DEBUG] switchNetwork: No MetaMask provider found');
         return false;
     }
 
@@ -184,17 +211,17 @@ async function switchNetworkToBellecour(): Promise<boolean> {
         const currentChainId = parseInt(chainId as unknown as string, 16);
         console.log('[DEBUG] Parsed chainId:', currentChainId);
 
-        if (currentChainId === IEXEC_BELLECOUR_CONFIG.chainId) {
-            console.log('[DEBUG] Already on Bellecour!');
+        if (currentChainId === CURRENT_CONFIG.chainId) {
+            console.log(`[DEBUG] Already on ${CURRENT_CONFIG.chainName}!`);
             return true;
         }
 
         // Try to switch network
-        console.log('[DEBUG] Switching to Bellecour...');
+        console.log(`[DEBUG] Switching to ${CURRENT_CONFIG.chainName}...`);
         try {
             await provider.request({
                 method: 'wallet_switchEthereumChain',
-                params: [{ chainId: IEXEC_BELLECOUR_CHAIN_ID }]
+                params: [{ chainId: CURRENT_CONFIG.chainIdHex }]
             });
             console.log('[DEBUG] Network switched successfully!');
             return true;
@@ -202,15 +229,15 @@ async function switchNetworkToBellecour(): Promise<boolean> {
             console.log('[DEBUG] Switch error:', switchError);
             // Network not added, try to add it
             if ((switchError as { code: number }).code === 4902) {
-                console.log('[DEBUG] Network not found, adding Bellecour...');
+                console.log(`[DEBUG] Network not found, adding ${CURRENT_CONFIG.chainName}...`);
                 await provider.request({
                     method: 'wallet_addEthereumChain',
                     params: [{
-                        chainId: IEXEC_BELLECOUR_CHAIN_ID,
-                        chainName: IEXEC_BELLECOUR_CONFIG.chainName,
-                        nativeCurrency: IEXEC_BELLECOUR_CONFIG.nativeCurrency,
-                        rpcUrls: [IEXEC_BELLECOUR_CONFIG.rpcUrl],
-                        blockExplorerUrls: [IEXEC_BELLECOUR_CONFIG.blockExplorer]
+                        chainId: CURRENT_CONFIG.chainIdHex,
+                        chainName: CURRENT_CONFIG.chainName,
+                        nativeCurrency: CURRENT_CONFIG.nativeCurrency,
+                        rpcUrls: [CURRENT_CONFIG.rpcUrl],
+                        blockExplorerUrls: [CURRENT_CONFIG.blockExplorer]
                     }]
                 });
                 console.log('[DEBUG] Network added successfully!');
@@ -308,7 +335,7 @@ export function WhitelistSection() {
             if (accounts && accounts.length > 0) {
                 console.log('[DEBUG] Account found:', accounts[0]);
                 // Check/switch network to iExec Bellecour
-                const correctNetwork = await switchNetworkToBellecour();
+                const correctNetwork = await switchNetwork();
                 console.log('[DEBUG] Network switch result:', correctNetwork);
                 if (!correctNetwork) {
                     toast.warning(`Please switch to ${IEXEC_BELLECOUR_CONFIG.chainName} in MetaMask`);
@@ -365,7 +392,7 @@ export function WhitelistSection() {
 
         try {
             // Ensure correct network (Bellecour - where iExec contracts live)
-            const correctNetwork = await switchNetworkToBellecour();
+            const correctNetwork = await switchNetwork();
             if (!correctNetwork) {
                 throw new Error(`Please switch to ${IEXEC_BELLECOUR_CONFIG.chainName}`);
             }
@@ -692,7 +719,8 @@ export function WhitelistSection() {
                 isOpen={showWalletModal}
                 onClose={() => setShowWalletModal(false)}
                 onConnect={handleWalletConnect}
-                targetChainId={134}
+                targetChainId={CURRENT_CONFIG.chainId}
+                networkConfig={CURRENT_CONFIG}
             />
         </section>
     );

@@ -25,6 +25,7 @@ interface WalletModalProps {
     onClose: () => void
     onConnect: (address: string, provider: any) => void
     targetChainId?: number
+    networkConfig: any // Dynamic config
 }
 
 // =============================================================================
@@ -101,7 +102,7 @@ const BELLECOUR_CONFIG = {
 // WALLET MODAL COMPONENT
 // =============================================================================
 
-export function WalletModal({ isOpen, onClose, onConnect, targetChainId = 134 }: WalletModalProps) {
+export function WalletModal({ isOpen, onClose, onConnect, targetChainId = 134, networkConfig }: WalletModalProps) {
     const [selectedWallet, setSelectedWallet] = useState<WalletType | null>(null)
     const [connectionState, setConnectionState] = useState<ConnectionState>('idle')
     const [errorMessage, setErrorMessage] = useState('')
@@ -185,23 +186,26 @@ export function WalletModal({ isOpen, onClose, onConnect, targetChainId = 134 }:
         return ethereum
     }, [])
 
-    // Switch network to Bellecour
+    // Switch network to configured chain
     const switchNetwork = async (provider: any): Promise<boolean> => {
         try {
             const chainId = await provider.request({ method: 'eth_chainId' })
             if (parseInt(chainId, 16) === targetChainId) return true
 
+            // Use passed config or fallback
+            const config = networkConfig || BELLECOUR_CONFIG;
+
             try {
                 await provider.request({
                     method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: BELLECOUR_CONFIG.chainIdHex }]
+                    params: [{ chainId: config.chainIdHex }]
                 })
                 return true
             } catch (switchError: any) {
                 if (switchError.code === 4902) {
                     await provider.request({
                         method: 'wallet_addEthereumChain',
-                        params: [BELLECOUR_CONFIG]
+                        params: [config]
                     })
                     return true
                 }
