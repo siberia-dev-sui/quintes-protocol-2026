@@ -16,7 +16,7 @@ export function Hero() {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center h-full justify-end pb-16 text-center">
         <Pill className="mb-6">APY TARGET: 33%</Pill>
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-sentient">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-sentient">
           Institutional Grade <br />
           <i className="font-light">Yield</i>
         </h1>

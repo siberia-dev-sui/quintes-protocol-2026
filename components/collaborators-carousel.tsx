@@ -19,7 +19,7 @@ export function CollaboratorsCarousel() {
             <div className="relative border-t border-border">
                 <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 bg-background z-50">
                     <span className="font-mono text-xs uppercase tracking-widest text-foreground/40">
-                        Collaborators
+                        Contributes from
                     </span>
                 </div>
             </div>

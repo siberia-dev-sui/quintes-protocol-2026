@@ -28,7 +28,7 @@ export function FeaturesSection() {
             <div className="container mx-auto max-w-5xl relative z-10">
                 <div className="text-center mb-16">
                     <Pill className="mb-6">ABOUT QUINTES</Pill>
-                    <h2 className="text-4xl md:text-5xl font-sentient mb-6">
+                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-sentient mb-6">
                         The S&P of <i className="font-light">Web3</i>
                     </h2>
                     <p className="font-mono text-foreground/70 max-w-2xl mx-auto">

@@ -37,7 +37,7 @@ export function FAQSection() {
             <div className="container mx-auto max-w-3xl relative z-10">
                 <div className="text-center mb-16">
                     <Pill className="mb-6">Questions?</Pill>
-                    <h2 className="text-4xl md:text-5xl font-sentient">
+                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-sentient">
                         Your Quintes Queries, <i className="font-light">Answered.</i>
                     </h2>
                 </div>

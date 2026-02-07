@@ -489,13 +489,29 @@ export function WhitelistSection() {
             // STEP 4: Save to Supabase (Data Persistence Fix)
             setSubmitStatus("📝 Saving your profile...");
             const refCode = generateReferralCode();
+
+            // Capture IP address and User Agent for anti-bot filtering
+            let userIpAddress: string | null = null;
+            try {
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                userIpAddress = ipData.ip;
+            } catch (error) {
+                logger.error("Failed to fetch IP address:", error);
+                // Continue without IP if fetch fails
+            }
+
+            const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
+
             const { error: dbError } = await supabase
                 .from('whitelist_participants')
                 .insert([{
                     wallet_address: walletAddress,
                     protected_data_address: protectedData.address,
                     referral_code: refCode,
-                    status: 'active'
+                    status: 'active',
+                    ip_address: userIpAddress,
+                    user_agent: userAgent
                 }]);
 
             if (dbError) {
@@ -556,7 +572,7 @@ export function WhitelistSection() {
             <div className="container mx-auto max-w-3xl text-center relative z-10">
                 <Pill className="mb-6">EARLY ACCESS</Pill>
 
-                <h2 className="text-4xl md:text-5xl font-sentient mb-6">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-sentient mb-6">
                     Join the <i className="font-light">Whitelist</i>
                 </h2>
 

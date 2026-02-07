@@ -15,7 +15,7 @@ export function AssetsSection() {
 
             <div className="container mx-auto max-w-4xl text-center relative z-10">
                 <Pill className="mb-6">DEPOSIT ASSETS</Pill>
-                <h2 className="text-4xl md:text-5xl font-sentient mb-6">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-sentient mb-6">
                     Your Crypto, <i className="font-light">Growing</i>
                 </h2>
                 <p className="font-mono text-foreground/60 max-w-xl mx-auto mb-16">
