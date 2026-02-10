@@ -17,11 +17,22 @@ import { logger, sanitizeForLog } from "@/utils/logger";
 // =============================================================================
 
 // 1. CONFIGURATION TOGGLE
-// 'mainnet' = iExec Bellecour (Production)
-// 'testnet' = Arbitrum Sepolia (Testing with free faucet tokens)
-const NETWORK_MODE = 'mainnet' as 'mainnet' | 'testnet';
+// 'mainnet' = Arbitrum One (Production)
+// 'testnet' = Arbitrum Sepolia (Testing)
+// 'sidechain' = Bellecour (Legacy)
+const NETWORK_MODE = 'mainnet' as 'mainnet' | 'testnet' | 'sidechain';
 
-// 2. MAINNET CONFIG (iExec Bellecour)
+// 2. MAINNET CONFIG (Arbitrum One)
+const IEXEC_MAINNET_CONFIG = {
+    chainId: 42161,
+    chainIdHex: '0xa4b1',
+    chainName: 'Arbitrum One',
+    rpcUrl: 'https://arb1.arbitrum.io/rpc',
+    blockExplorer: 'https://arbiscan.io',
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }
+};
+
+// 3. LEGACY SIDECHAIN CONFIG (iExec Bellecour)
 const IEXEC_BELLECOUR_CONFIG = {
     chainId: 134,
     chainIdHex: '0x86',
@@ -31,20 +42,24 @@ const IEXEC_BELLECOUR_CONFIG = {
     nativeCurrency: { name: 'xRLC', symbol: 'xRLC', decimals: 18 }
 };
 
-// 3. TESTNET CONFIG (Arbitrum Sepolia)
-// User has 5 RLC here from the faucet
+// 4. TESTNET CONFIG (Arbitrum Sepolia)
 const IEXEC_TESTNET_CONFIG = {
     chainId: 421614,
     chainIdHex: '0x66eee',
     chainName: 'Arbitrum Sepolia',
     rpcUrl: 'https://sepolia-rollup.arbitrum.io/rpc',
     blockExplorer: 'https://sepolia.arbiscan.io',
-    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 } // Uses ETH for gas usually, but RLC for iExec
+    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 }
 };
 
-// 4. ACTIVE CONFIGURATION
-const CURRENT_CONFIG = NETWORK_MODE === 'mainnet' ? IEXEC_BELLECOUR_CONFIG : IEXEC_TESTNET_CONFIG;
-const IEXEC_CHAIN_ID = NETWORK_MODE === 'mainnet' ? 134 : 421614;
+// 5. ACTIVE CONFIGURATION
+const CURRENT_CONFIG = NETWORK_MODE === 'mainnet'
+    ? IEXEC_MAINNET_CONFIG
+    : NETWORK_MODE === 'sidechain'
+        ? IEXEC_BELLECOUR_CONFIG
+        : IEXEC_TESTNET_CONFIG;
+
+const IEXEC_CHAIN_ID = CURRENT_CONFIG.chainId;
 
 console.log(`[CONFIG] Running in ${NETWORK_MODE} mode on ${CURRENT_CONFIG.chainName}`);
 
@@ -164,8 +179,12 @@ function getMetaMaskProvider(): any | null {
 // iEXEC WEB3MAIL INTEGRATION (Gasless - Sponsor pays gas)
 // =============================================================================
 
-// Web3Mail iApp whitelist address (UPDATED - correct address from iExec docs)
-const WEB3MAIL_APP_WHITELIST = '0x781482C39CcE25546583EaC4957Fb7Bf04C277D2';
+// Web3Mail iApp whitelist addresses (NETWORK-SPECIFIC)
+// Bellecour: 0x781482C39CcE25546583EaC4957Fb7Bf04C277D2
+// Arbitrum One: 0xD5054a18565c4a9E5c1aa3cEB53258bd59d4c78C
+const WEB3MAIL_APP_WHITELIST = NETWORK_MODE === 'sidechain'
+    ? '0x781482C39CcE25546583EaC4957Fb7Bf04C277D2'  // Bellecour
+    : '0xD5054a18565c4a9E5c1aa3cEB53258bd59d4c78C'; // Arbitrum One & Sepolia
 
 /**
  * Initialize iExec DataProtector SDK for protectData & grantAccess
@@ -277,6 +296,15 @@ export function WhitelistSection() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState("");
     const [premiumSuccess, setPremiumSuccess] = useState(false);
+    const [currentStep, setCurrentStep] = useState(0); // 0 = not started, 1-4 = active steps
+
+    // Step definitions for the progress stepper
+    const REGISTRATION_STEPS = [
+        { id: 1, label: 'Encrypt', desc: 'Encrypting your email on-chain', icon: '🔒' },
+        { id: 2, label: 'Access', desc: 'Granting Web3Mail permission', icon: '🔑' },
+        { id: 3, label: 'Prepare', desc: 'Setting up iExec account', icon: '💰' },
+        { id: 4, label: 'Confirm', desc: 'Sending confirmation email', icon: '📨' },
+    ];
 
     // Wallet Modal state
     const [showWalletModal, setShowWalletModal] = useState(false);
@@ -341,7 +369,7 @@ export function WhitelistSection() {
                 const correctNetwork = await switchNetwork();
                 console.log('[DEBUG] Network switch result:', correctNetwork);
                 if (!correctNetwork) {
-                    toast.warning(`Please switch to ${IEXEC_BELLECOUR_CONFIG.chainName} in MetaMask`);
+                    toast.warning(`Please switch to ${CURRENT_CONFIG.chainName} in MetaMask`);
                     setIsConnecting(false);
                     return;
                 }
@@ -391,6 +419,7 @@ export function WhitelistSection() {
         }
 
         setIsSubmitting(true);
+        setCurrentStep(0);
         setSubmitStatus("Initializing...");
 
         try {
@@ -404,10 +433,10 @@ export function WhitelistSection() {
                 return;
             }
 
-            // Ensure correct network (Bellecour - where iExec contracts live)
+            // Ensure correct network matches our config (Arbitrum One, Sepolia, or Bellecour)
             const correctNetwork = await switchNetwork(provider);
             if (!correctNetwork) {
-                throw new Error(`Please switch to ${IEXEC_BELLECOUR_CONFIG.chainName}`);
+                throw new Error(`Please switch to ${CURRENT_CONFIG.chainName}`);
             }
 
             // =====================================================================
@@ -437,7 +466,8 @@ export function WhitelistSection() {
             const web3mail = await initializeWeb3Mail(provider);
 
             // STEP 1: Protect Email (User signs TX #1)
-            setSubmitStatus("🔒 Encrypting email...");
+            setCurrentStep(1);
+            setSubmitStatus("Sign in MetaMask to encrypt your email");
             const protectedData = await dataProtector.protectData({
                 data: { email: proEmail },
                 name: `Quintes Whitelist - ${walletAddress.slice(0, 8)}`
@@ -447,7 +477,8 @@ export function WhitelistSection() {
             // STEP 2: Grant Access to Web3Mail App (User signs TX #2)
             // NOTE: When using Web3Mail whitelist, authorizedUser must be zero address
             // The whitelist contract handles authorization internally
-            setSubmitStatus("🔑 Granting access...");
+            setCurrentStep(2);
+            setSubmitStatus("Sign to grant Web3Mail access");
             await dataProtector.grantAccess({
                 protectedData: protectedData.address,
                 authorizedApp: WEB3MAIL_APP_WHITELIST, // iExec Web3Mail whitelist
@@ -456,8 +487,38 @@ export function WhitelistSection() {
             });
             logger.info("Access granted to Web3Mail whitelist");
 
+            // STEP 2.5: Deposit RLC into iExec Account (REQUIRED before sendEmail)
+            // iExec requires RLC to be deposited into the on-chain account contract,
+            // not just held in the wallet. Without this, the marketplace rejects tasks.
+            setCurrentStep(3);
+            setSubmitStatus("Checking iExec account balance...");
+            try {
+                const { IExec } = await import('iexec');
+                const iexec = new IExec({ ethProvider: provider });
+
+                // Check current account balance
+                const account = await iexec.account.checkBalance(walletAddress);
+                const currentStake = BigInt(account.stake.toString());
+                const requiredStake = BigInt(150000000); // 0.15 RLC (covers workerpool + margin)
+
+                logger.info("iExec account stake:", currentStake.toString(), "nRLC");
+
+                if (currentStake < requiredStake) {
+                    const depositAmount = requiredStake - currentStake;
+                    setSubmitStatus("💰 Depositing RLC to iExec account (sign TX)...");
+                    await iexec.account.deposit(depositAmount.toString());
+                    logger.info("Deposited", depositAmount.toString(), "nRLC into iExec account");
+                } else {
+                    logger.info("iExec account already has sufficient funds");
+                }
+            } catch (depositError) {
+                logger.error("iExec deposit error:", depositError);
+                // Try to continue anyway - maybe the deposit isn't needed
+            }
+
             // STEP 3: Send Confirmation Email (User signs TX #3)
-            setSubmitStatus("📨 Sending confirmation...");
+            setCurrentStep(4);
+            setSubmitStatus("Sign to send your welcome email");
             await web3mail.sendEmail({
                 protectedData: protectedData.address,
                 emailSubject: "Welcome to Quintes Protocol Whitelist",
@@ -482,12 +543,15 @@ export function WhitelistSection() {
                             </div>
                         </body>
                     </html>
-                `
+                `,
+                contentType: "text/html",
+                senderName: "Quintes Protocol",
+                workerpoolMaxPrice: 100000000, // 0.1 RLC max for workerpool (in nRLC)
             });
             logger.info("Email sent successfully");
 
             // STEP 4: Save to Supabase (Data Persistence Fix)
-            setSubmitStatus("📝 Saving your profile...");
+            setSubmitStatus("Saving your profile...");
             const refCode = generateReferralCode();
 
             // Capture IP address and User Agent for anti-bot filtering
@@ -517,6 +581,10 @@ export function WhitelistSection() {
             if (dbError) {
                 logger.error("DB Error (non-fatal):", dbError);
                 // Don't fail the whole flow, blockchain part succeeded
+                // But DO notify the user so we know about it
+                toast.warning("Profile saved on blockchain, but database sync had an issue.", {
+                    description: "Your whitelist spot is secured. We'll sync your profile shortly."
+                });
             }
 
             // Success!
@@ -535,10 +603,10 @@ export function WhitelistSection() {
                 });
             } else if (errorMessage.includes("insufficient funds") || errorMessage.includes("gas")) {
                 toast.error("Insufficient Funds", {
-                    description: "You need xRLC on iExec Bellecour to pay for gas. Get xRLC via the iExec Bridge.",
+                    description: `You need ETH on ${CURRENT_CONFIG.chainName} to pay for gas, plus RLC for iExec services.`,
                     action: {
-                        label: "Get xRLC",
-                        onClick: () => window.open("https://docs.iex.ec/get-started/tooling-and-explorers/bridge", "_blank")
+                        label: "Get RLC",
+                        onClick: () => window.open("https://app.uniswap.org/explore/tokens/arbitrum/0xe649e6a1f2afc63ca268c2363691cecaf75cf47c", "_blank")
                     }
                 });
             } else {
@@ -547,6 +615,7 @@ export function WhitelistSection() {
                 });
             }
             setSubmitStatus("");
+            setCurrentStep(0);
         } finally {
             setIsSubmitting(false);
         }
@@ -710,6 +779,43 @@ export function WhitelistSection() {
                                         </div>
                                     </div>
 
+                                    {/* Progress Stepper - shown during registration */}
+                                    {isSubmitting && currentStep > 0 && (
+                                        <div className="mb-6 p-4 border border-border/50 bg-background/80 backdrop-blur-sm" style={{
+                                            clipPath: "polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px)"
+                                        }}>
+                                            <div className="flex items-center justify-between mb-3">
+                                                {REGISTRATION_STEPS.map((step, idx) => (
+                                                    <div key={step.id} className="flex items-center flex-1">
+                                                        <div className={`flex flex-col items-center gap-1 flex-1 transition-all duration-500 ${step.id < currentStep ? 'opacity-100' :
+                                                            step.id === currentStep ? 'opacity-100 scale-110' :
+                                                                'opacity-30'
+                                                            }`}>
+                                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-500 ${step.id < currentStep
+                                                                ? 'border-green-500 bg-green-500/20 text-green-400'
+                                                                : step.id === currentStep
+                                                                    ? 'border-primary bg-primary/20 text-primary animate-pulse shadow-lg shadow-primary/30'
+                                                                    : 'border-border bg-background text-foreground/30'
+                                                                }`}>
+                                                                {step.id < currentStep ? '✓' : step.icon}
+                                                            </div>
+                                                            <span className={`text-[10px] font-mono uppercase tracking-wider ${step.id === currentStep ? 'text-primary font-bold' :
+                                                                step.id < currentStep ? 'text-green-400' : 'text-foreground/30'
+                                                                }`}>{step.label}</span>
+                                                        </div>
+                                                        {idx < REGISTRATION_STEPS.length - 1 && (
+                                                            <div className={`h-[2px] flex-1 mx-1 transition-all duration-500 ${step.id < currentStep ? 'bg-green-500/60' : 'bg-border/30'
+                                                                }`} />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <p className="text-xs font-mono text-primary/80 text-center animate-pulse">
+                                                {submitStatus}
+                                            </p>
+                                        </div>
+                                    )}
+
                                     <Button
                                         onClick={joinVerifiedWhitelist}
                                         disabled={isSubmitting}
@@ -721,7 +827,7 @@ export function WhitelistSection() {
                                                 <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="8" />
                                                 </svg>
-                                                {submitStatus}
+                                                Step {currentStep} of 4 — Check MetaMask
                                             </>
                                         ) : (
                                             "[Join Verified Whitelist]"
@@ -729,7 +835,7 @@ export function WhitelistSection() {
                                     </Button>
 
                                     <p className="font-mono text-xs text-foreground/40 text-center">
-                                        ⚠️ You pay gas fees in xRLC. <a href="https://docs.iex.ec/get-started/tooling-and-explorers/bridge" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get xRLC →</a>
+                                        ⚠️ Gas: ETH | Service: 5 RLC. <a href="https://app.uniswap.org/explore/tokens/arbitrum/0xe649e6a1f2afc63ca268c2363691cecaf75cf47c" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get RLC (Uniswap) →</a>
                                     </p>
                                 </div>
                             ) : (
@@ -760,7 +866,7 @@ export function WhitelistSection() {
                 </div>
 
                 <p className="font-mono text-xs text-foreground/40 mt-10">
-                    Powered by iExec Bellecour & Web3Mail
+                    Powered by iExec Protocol &amp; Web3Mail
                 </p>
             </div>
 

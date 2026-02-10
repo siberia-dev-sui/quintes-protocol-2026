@@ -12,6 +12,7 @@
     "@eslint/eslintrc": "latest",
     "@expo/dom-webview": "latest",
     "@expo/metro-runtime": "latest",
+    "@gelatonetwork/relay-sdk": "^5.6.1",
     "@hookform/resolvers": "^3.10.0",
     "@iexec/dataprotector": "^2.0.0-beta.23",
     "@iexec/web3mail": "^1.7.2",
@@ -67,6 +68,7 @@
     "next": "16.1.1",
     "next-themes": "latest",
     "path": "latest",
+    "permissionless": "^0.3.4",
     "r3f-perf": "latest",
     "react": "^19",
     "react-day-picker": "9.8.0",
@@ -84,6 +86,7 @@
     "three": "latest",
     "url": "latest",
     "vaul": "^0.9.9",
+    "viem": "^2.45.2",
     "zod": "3.25.67"
   },
   "devDependencies": {
