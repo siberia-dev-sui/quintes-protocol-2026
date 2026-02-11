@@ -501,13 +501,13 @@ export function WhitelistSection() {
                 const currentStake = BigInt(account.stake.toString());
                 const requiredStake = BigInt(150000000); // 0.15 RLC (covers workerpool + margin)
 
-                logger.info("iExec account stake:", currentStake.toString(), "nRLC");
+                logger.info(`iExec account stake: ${currentStake.toString()} nRLC`);
 
                 if (currentStake < requiredStake) {
                     const depositAmount = requiredStake - currentStake;
                     setSubmitStatus("💰 Depositing RLC to iExec account (sign TX)...");
                     await iexec.account.deposit(depositAmount.toString());
-                    logger.info("Deposited", depositAmount.toString(), "nRLC into iExec account");
+                    logger.info(`Deposited ${depositAmount.toString()} nRLC into iExec account`);
                 } else {
                     logger.info("iExec account already has sufficient funds");
                 }
