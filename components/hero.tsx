@@ -14,13 +14,13 @@ export function Hero() {
       <GL hovering={hovering} />
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center h-full justify-end pb-16 text-center">
-        <Pill className="mb-6">APY TARGET: 33%</Pill>
-        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-sentient px-4">
+      <div className="relative z-10 flex flex-col items-center h-full justify-end pb-28 sm:pb-16 text-center">
+        <Pill className="mb-6 sm:mb-8">APY TARGET: 33%</Pill>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-sentient px-4 leading-tight">
           Institutional Grade <br />
           <i className="font-light">Yield</i>
         </h1>
-        <p className="font-mono text-sm sm:text-base text-foreground/60 text-balance mt-8 max-w-[500px] mx-auto px-6">
+        <p className="font-mono text-[15px] sm:text-base text-foreground/60 text-balance mt-6 sm:mt-8 max-w-[500px] mx-auto px-6">
           Scale your Bitcoin and Stablecoins with a mathematically engineered 33% APY target.
           Backed by Automated Proof of Collateral.
         </p>
