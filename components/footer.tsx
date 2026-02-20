@@ -6,7 +6,7 @@ export function Footer() {
     return (
         <footer className="py-12 px-6 border-t border-border">
             <div className="container mx-auto max-w-5xl">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-6">
                     <div className="flex items-center gap-3">
                         <Logo className="w-6 h-6" />
                         <span className="font-mono text-foreground/60 text-sm">
@@ -14,7 +14,7 @@ export function Footer() {
                         </span>
                     </div>
 
-                    <div className="flex items-center gap-8">
+                    <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
                         <Link
                             href="https://t.me/Quintes_Official"
                             target="_blank"

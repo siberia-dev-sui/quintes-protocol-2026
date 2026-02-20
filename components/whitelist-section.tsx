@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Pill } from "./pill";
 import { Button } from "./ui/button";
 import { WalletModal } from "./wallet-modal";
-import { supabase } from "@/lib/supabase";
 import { generateReferralCode } from "@/lib/referral";
 import { logger, sanitizeForLog } from "@/utils/logger";
 // PRESERVED: Sponsorship module (commented out - User Pays Gas mode active)
@@ -286,6 +285,7 @@ export function WhitelistSection() {
     // FREE version state
     const [email, setEmail] = useState("");
     const [freeSubmitted, setFreeSubmitted] = useState(false);
+    const [isFreeSubmitting, setIsFreeSubmitting] = useState(false);
 
 
     // PREMIUM version state
@@ -327,12 +327,54 @@ export function WhitelistSection() {
     // =========================================================================
     // FREE VERSION - Simple Email
     // =========================================================================
-    const handleFreeSubmit = (e: React.FormEvent) => {
+    const handleFreeSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (email) {
+        if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+            toast.error("Please enter a valid email address");
+            return;
+        }
+
+        setIsFreeSubmitting(true);
+        logger.info("Whitelist signup (FREE):", sanitizeForLog(email));
+
+        try {
+            const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
+
+            const response = await fetch('/api/whitelist/free', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email,
+                    user_agent: userAgent
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                // If it's a duplicate email, show a friendlier message
+                if (result.error === 'Email already registered') {
+                    toast.info("This email is already on the waitlist!");
+                    setFreeSubmitted(true);
+                    return;
+                }
+                throw new Error(result.error || "Failed to save email to database");
+            }
+
             setFreeSubmitted(true);
-            logger.info("Whitelist signup (FREE):", sanitizeForLog(email));
-            // TODO: Send to backend/database
+            toast.success("Joined Whitelist", {
+                description: "We'll be in touch soon!"
+            });
+        } catch (error) {
+            logger.error("Free Whitelist Registration Error:", error);
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            toast.error("Registration failed", {
+                description: errorMessage
+            });
+        } finally {
+            setIsFreeSubmitting(false);
         }
     };
 
@@ -550,35 +592,31 @@ export function WhitelistSection() {
             });
             logger.info("Email sent successfully");
 
-            // STEP 4: Save to Supabase (Data Persistence Fix)
+            // STEP 4: Save to Backend API (Data Persistence Fix)
             setSubmitStatus("Saving your profile...");
             const refCode = generateReferralCode();
-
-            // Capture IP address and User Agent for anti-bot filtering
-            let userIpAddress: string | null = null;
-            try {
-                const ipResponse = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipResponse.json();
-                userIpAddress = ipData.ip;
-            } catch (error) {
-                logger.error("Failed to fetch IP address:", error);
-                // Continue without IP if fetch fails
-            }
-
             const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
 
-            const { error: dbError } = await supabase
-                .from('whitelist_participants')
-                .insert([{
-                    wallet_address: walletAddress,
-                    protected_data_address: protectedData.address,
-                    referral_code: refCode,
-                    status: 'active',
-                    ip_address: userIpAddress,
-                    user_agent: userAgent
-                }]);
+            try {
+                const response = await fetch('/api/whitelist/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        wallet_address: walletAddress,
+                        protected_data_address: protectedData.address,
+                        referral_code: refCode,
+                        user_agent: userAgent
+                    })
+                });
 
-            if (dbError) {
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || "Failed to save to database");
+                }
+            } catch (dbError) {
                 logger.error("DB Error (non-fatal):", dbError);
                 // Don't fail the whole flow, blockchain part succeeded
                 // But DO notify the user so we know about it
@@ -710,13 +748,20 @@ export function WhitelistSection() {
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="your@email.com"
                                         required
-                                        className="w-full sm:w-auto min-w-[280px] px-6 py-4 bg-background border border-border font-mono text-foreground placeholder:text-foreground/40 focus:border-primary/50 focus:shadow-lg focus:shadow-primary/20 focus:scale-[1.02] focus:outline-none transition-all duration-300"
+                                        disabled={isFreeSubmitting}
+                                        className="w-full sm:w-auto min-w-[280px] px-6 py-4 bg-background border border-border font-mono text-foreground placeholder:text-foreground/40 focus:border-primary/50 focus:shadow-lg focus:shadow-primary/20 focus:scale-[1.02] focus:outline-none transition-all duration-300 disabled:opacity-50"
                                         style={{
                                             clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)"
                                         }}
                                     />
-                                    <Button type="submit" size="sm" className="hover:scale-105 hover:-translate-y-0.5 transition-transform duration-300">
-                                        [Subscribe]
+                                    <Button type="submit" size="sm" disabled={isFreeSubmitting} className="hover:scale-105 hover:-translate-y-0.5 transition-transform duration-300">
+                                        {isFreeSubmitting ? (
+                                            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="8" />
+                                            </svg>
+                                        ) : (
+                                            "[Subscribe]"
+                                        )}
                                     </Button>
                                 </form>
                             )}

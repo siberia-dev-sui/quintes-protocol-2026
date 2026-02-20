@@ -43,57 +43,9 @@ export async function GET() {
     });
 }
 
-/*
 // =====================================================================
-// PRESERVED: Original Implementation (Uncomment to re-enable)
+// SECURITY UPDATE (Phase 2): 
+// Deprecated implementation removed completely.
+// Storing this code as a comment exposed an unnecessary attack vector 
+// (e.g. accidental reactivation without proper rate-limiting protections).
 // =====================================================================
-
-import { JsonRpcProvider, Wallet, parseEther } from 'ethers';
-
-const IEXEC_BELLECOUR_RPC = 'https://bellecour.iex.ec';
-const SUBSIDY_AMOUNT = '0.002';
-
-export async function POST(req: Request) {
-    try {
-        const { userAddress } = await req.json();
-
-        if (!userAddress) {
-            return NextResponse.json({ error: 'User address required' }, { status: 400 });
-        }
-
-        const sponsorKey = process.env.SPONSOR_PRIVATE_KEY;
-        if (!sponsorKey) {
-            console.error('SPONSOR_PRIVATE_KEY not set');
-            return NextResponse.json({ error: 'Sponsorship unavailable: Server wallet not configured' }, { status: 503 });
-        }
-
-        const provider = new JsonRpcProvider(IEXEC_BELLECOUR_RPC);
-        const wallet = new Wallet(sponsorKey, provider);
-
-        const balance = await provider.getBalance(wallet.address);
-        const amountToSend = parseEther(SUBSIDY_AMOUNT);
-
-        if (balance < amountToSend) {
-            console.error('Sponsor wallet empty');
-            return NextResponse.json({ error: 'Sponsorship pool empty' }, { status: 503 });
-        }
-
-        const tx = await wallet.sendTransaction({
-            to: userAddress,
-            value: amountToSend
-        });
-
-        console.log(`Sponsored ${userAddress}: ${tx.hash}`);
-
-        return NextResponse.json({ 
-            success: true, 
-            txHash: tx.hash,
-            message: 'Gas subsidy sent'
-        });
-
-    } catch (error) {
-        console.error('Sponsor API Error:', error);
-        return NextResponse.json({ error: 'Sponsorship failed' }, { status: 500 });
-    }
-}
-*/
