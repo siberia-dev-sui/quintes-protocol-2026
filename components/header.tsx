@@ -60,13 +60,8 @@ export const Header = () => {
         }`}
     >
       <header className="flex items-center justify-between container">
-        <Link href="/" className="flex items-center gap-2 md:gap-3">
-          <Logo className="w-[31px] h-[31px] md:w-[40px] md:h-[40px]" />
-          <img
-            src="https://pub-731cbf0e109a4a5fbffae6de248ddd3a.r2.dev/Layer_1.svg"
-            alt="QUINTES"
-            className="h-[18px] md:h-[22px] w-auto"
-          />
+        <Link href="/" className="flex items-center">
+          <Logo className="h-[28px] md:h-[35px] w-auto object-contain" />
         </Link>
         <nav className="flex max-lg:hidden absolute left-1/2 -translate-x-1/2 items-center justify-center gap-x-10">
           {navItems.map((item) => (

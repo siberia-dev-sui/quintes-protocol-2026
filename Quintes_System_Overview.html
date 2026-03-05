@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Quintes Protocol — System Overview</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Inter', -apple-system, sans-serif;
             line-height: 1.7;
@@ -18,7 +23,7 @@
             max-width: 900px;
             margin: 0 auto;
         }
-        
+
         h1 {
             font-size: 28px;
             color: #0f3460;
@@ -26,7 +31,7 @@
             padding-bottom: 12px;
             margin-bottom: 8px;
         }
-        
+
         h2 {
             font-size: 20px;
             color: #16213e;
@@ -35,31 +40,38 @@
             margin-top: 35px;
             margin-bottom: 15px;
         }
-        
+
         h3 {
             font-size: 16px;
             color: #533483;
             margin-top: 20px;
             margin-bottom: 10px;
         }
-        
-        p { margin: 10px 0; font-size: 14px; }
-        
+
+        p {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
         .subtitle {
             font-size: 13px;
             color: #666;
             margin-bottom: 30px;
         }
-        
-        hr { border: none; border-top: 1px solid #eee; margin: 25px 0; }
-        
+
+        hr {
+            border: none;
+            border-top: 1px solid #eee;
+            margin: 25px 0;
+        }
+
         table {
             border-collapse: collapse;
             width: 100%;
             margin: 15px 0;
             font-size: 13px;
         }
-        
+
         th {
             background: #0f3460;
             color: white;
@@ -67,14 +79,16 @@
             text-align: left;
             font-weight: 500;
         }
-        
+
         td {
             padding: 8px 12px;
             border-bottom: 1px solid #eee;
         }
-        
-        tr:nth-child(even) { background: #f8f9fa; }
-        
+
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
         .mermaid {
             background: #f8f9fc;
             border: 1px solid #e0e0e0;
@@ -83,7 +97,7 @@
             margin: 15px 0;
             text-align: center;
         }
-        
+
         .callout {
             border-left: 4px solid #e94560;
             background: #fff5f5;
@@ -92,15 +106,20 @@
             border-radius: 0 6px 6px 0;
             font-size: 13px;
         }
-        
+
         .callout.info {
             border-left-color: #3498db;
             background: #f0f8ff;
         }
-        
-        .callout strong { color: #e94560; }
-        .callout.info strong { color: #3498db; }
-        
+
+        .callout strong {
+            color: #e94560;
+        }
+
+        .callout.info strong {
+            color: #3498db;
+        }
+
         code {
             background: #f0f0f0;
             padding: 2px 6px;
@@ -108,165 +127,311 @@
             font-size: 12px;
             font-family: 'SF Mono', monospace;
         }
-        
-        .emoji { font-size: 16px; }
-        
-        .check { color: #27ae60; font-weight: bold; }
-        
+
+        .emoji {
+            font-size: 16px;
+        }
+
+        .check {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
         @media print {
-            body { padding: 20px 30px; }
-            .mermaid { break-inside: avoid; }
-            table { break-inside: avoid; }
-            h2 { break-after: avoid; }
+            body {
+                padding: 20px 30px;
+            }
+
+            .mermaid {
+                break-inside: avoid;
+            }
+
+            table {
+                break-inside: avoid;
+            }
+
+            h2 {
+                break-after: avoid;
+            }
         }
     </style>
 </head>
+
 <body>
     <h1>Quintes Protocol — System Overview</h1>
-    <p class="subtitle"><strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> February 10, 2026 &nbsp;|&nbsp; <strong>Network:</strong> Arbitrum One (Mainnet)</p>
-    
+    <p class="subtitle"><strong>Version:</strong> 1.0 &nbsp;|&nbsp; <strong>Date:</strong> February 10, 2026
+        &nbsp;|&nbsp; <strong>Network:</strong> Arbitrum One (Mainnet)</p>
+
     <hr>
-    
+
     <h2>1. What Does the System Do?</h2>
-    <p>Quintes Protocol uses <strong>iExec Web3Mail</strong> to create a privacy-preserving whitelist registration. Users join the whitelist by encrypting their email on-chain and receiving a confirmation — <strong>without Quintes ever seeing their email address</strong>.</p>
-    
+    <p>Quintes Protocol uses <strong>iExec Web3Mail</strong> to create a privacy-preserving whitelist registration.
+        Users join the whitelist by encrypting their email on-chain and receiving a confirmation — <strong>without
+            Quintes ever seeing their email address</strong>.</p>
+
     <div class="mermaid">
-graph LR
-    A["👤 User"] -->|Connects Wallet| B["🌐 Quintes App"]
-    B -->|Encrypts Email| C["🔒 iExec TEE"]
-    C -->|Sends Confirmation| D["📧 User Inbox"]
-    B -->|Saves Registration| E["🗄️ Supabase DB"]
-    E -->|Displays Data| F["📊 Admin Dashboard"]
+        graph LR
+        A["👤 User"] -->|Connects Wallet| B["🌐 Quintes App"]
+        B -->|Encrypts Email| C["🔒 iExec TEE"]
+        C -->|Sends Confirmation| D["📧 User Inbox"]
+        B -->|Saves Registration| E["🗄️ Supabase DB"]
+        E -->|Displays Data| F["📊 Admin Dashboard"]
     </div>
-    
+
     <hr>
-    
+
     <h2>2. Registration Flow (Step by Step)</h2>
     <p>When a user clicks <strong>[Join Verified Whitelist]</strong>, the following 4-step process happens:</p>
-    
+
     <div class="mermaid">
-sequenceDiagram
-    actor User
-    participant App as Quintes App
-    participant iExec as iExec Protocol
-    participant TEE as Trusted Execution Environment
-    participant DB as Supabase
+        sequenceDiagram
+        actor User
+        participant App as Quintes App
+        participant iExec as iExec Protocol
+        participant TEE as Trusted Execution Environment
+        participant DB as Supabase
 
-    User->>App: Enter email + Click Join
-    
-    rect rgb(230, 230, 250)
-    Note over App,iExec: Step 1 — Encrypt Email
-    App->>iExec: protectData(email)
-    iExec->>TEE: Encrypt in secure enclave
-    TEE-->>iExec: Protected Data NFT
-    iExec-->>App: protectedData.address
-    end
-    
-    rect rgb(230, 250, 230)
-    Note over App,iExec: Step 2 — Grant Access
-    App->>iExec: grantAccess(Web3Mail)
-    iExec-->>App: Access granted
-    end
+        User->>App: Enter email + Click Join
 
-    rect rgb(250, 240, 230)
-    Note over App,iExec: Step 3 — Deposit and Send Email
-    App->>iExec: account.deposit(0.15 RLC)
-    App->>iExec: sendEmail(welcome message)
-    iExec->>TEE: Decrypt email in enclave
-    TEE->>User: Welcome email sent
-    end
+        rect rgb(230, 230, 250)
+        Note over App,iExec: Step 1 — Encrypt Email
+        App->>iExec: protectData(email)
+        iExec->>TEE: Encrypt in secure enclave
+        TEE-->>iExec: Protected Data NFT
+        iExec-->>App: protectedData.address
+        end
 
-    rect rgb(230, 240, 250)
-    Note over App,DB: Step 4 — Save to Database
-    App->>DB: INSERT whitelist_participants
-    DB-->>App: Saved
-    end
+        rect rgb(230, 250, 230)
+        Note over App,iExec: Step 2 — Grant Access
+        App->>iExec: grantAccess(Web3Mail)
+        iExec-->>App: Access granted
+        end
+
+        rect rgb(250, 240, 230)
+        Note over App,iExec: Step 3 — Deposit and Send Email
+        App->>iExec: account.deposit(0.15 RLC)
+        App->>iExec: sendEmail(welcome message)
+        iExec->>TEE: Decrypt email in enclave
+        TEE->>User: Welcome email sent
+        end
+
+        rect rgb(230, 240, 250)
+        Note over App,DB: Step 4 — Save to Database
+        App->>DB: INSERT whitelist_participants
+        DB-->>App: Saved
+        end
     </div>
-    
+
     <h3>User Signatures Required</h3>
     <table>
-        <tr><th>Step</th><th>Action</th><th>MetaMask Signatures</th><th>Cost</th></tr>
-        <tr><td>1</td><td>Encrypt email on-chain</td><td>2-3</td><td>Gas (ETH)</td></tr>
-        <tr><td>2</td><td>Grant Web3Mail permission</td><td>1-2</td><td>Gas (ETH)</td></tr>
-        <tr><td>3</td><td>Deposit RLC + Send email</td><td>1-2</td><td>0.15 RLC + Gas</td></tr>
-        <tr><td>4</td><td>Save to database</td><td>0 (automatic)</td><td>Free</td></tr>
-        <tr style="font-weight:600;background:#e8f5e9"><td></td><td>Total</td><td>~5-7</td><td>~$0.15</td></tr>
+        <tr>
+            <th>Step</th>
+            <th>Action</th>
+            <th>MetaMask Signatures</th>
+            <th>Cost</th>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td>Encrypt email on-chain</td>
+            <td>2-3</td>
+            <td>Gas (ETH)</td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>Grant Web3Mail permission</td>
+            <td>1-2</td>
+            <td>Gas (ETH)</td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>Deposit RLC + Send email</td>
+            <td>1-2</td>
+            <td>0.15 RLC + Gas</td>
+        </tr>
+        <tr>
+            <td>4</td>
+            <td>Save to database</td>
+            <td>0 (automatic)</td>
+            <td>Free</td>
+        </tr>
+        <tr style="font-weight:600;background:#e8f5e9">
+            <td></td>
+            <td>Total</td>
+            <td>~5-7</td>
+            <td>~$0.15</td>
+        </tr>
     </table>
-    
+
     <hr>
-    
+
     <h2>3. Data Storage — What We Collect</h2>
-    
+
     <h3>3.1 Supabase Database</h3>
     <p>The <code>whitelist_participants</code> table stores the following:</p>
     <table>
-        <tr><th>Field</th><th>Type</th><th>Purpose</th><th>Contains PII?</th></tr>
-        <tr><td><code>id</code></td><td>UUID</td><td>Internal row identifier</td><td>No</td></tr>
-        <tr><td><code>created_at</code></td><td>Timestamp</td><td>Registration date</td><td>No</td></tr>
-        <tr><td><code>wallet_address</code></td><td>Text</td><td>Ethereum address (public)</td><td>No</td></tr>
-        <tr><td><code>protected_data_address</code></td><td>Text</td><td>iExec encrypted data reference</td><td>No</td></tr>
-        <tr><td><code>referral_code</code></td><td>Text</td><td>Unique referral code</td><td>No</td></tr>
-        <tr><td><code>referred_by</code></td><td>Text</td><td>Referrer's code (if any)</td><td>No</td></tr>
-        <tr><td><code>ip_address</code></td><td>Text</td><td>Anti-bot detection</td><td>Yes</td></tr>
-        <tr><td><code>user_agent</code></td><td>Text</td><td>Browser fingerprint</td><td>Yes</td></tr>
-        <tr><td><code>status</code></td><td>Text</td><td>Always "active"</td><td>No</td></tr>
+        <tr>
+            <th>Field</th>
+            <th>Type</th>
+            <th>Purpose</th>
+            <th>Contains PII?</th>
+        </tr>
+        <tr>
+            <td><code>id</code></td>
+            <td>UUID</td>
+            <td>Internal row identifier</td>
+            <td>No</td>
+        </tr>
+        <tr>
+            <td><code>created_at</code></td>
+            <td>Timestamp</td>
+            <td>Registration date</td>
+            <td>No</td>
+        </tr>
+        <tr>
+            <td><code>wallet_address</code></td>
+            <td>Text</td>
+            <td>Ethereum address (public)</td>
+            <td>No</td>
+        </tr>
+        <tr>
+            <td><code>protected_data_address</code></td>
+            <td>Text</td>
+            <td>iExec encrypted data reference</td>
+            <td>No</td>
+        </tr>
+        <tr>
+            <td><code>referral_code</code></td>
+            <td>Text</td>
+            <td>Unique referral code</td>
+            <td>No</td>
+        </tr>
+        <tr>
+            <td><code>referred_by</code></td>
+            <td>Text</td>
+            <td>Referrer's code (if any)</td>
+            <td>No</td>
+        </tr>
+        <tr>
+            <td><code>ip_address</code></td>
+            <td>Text</td>
+            <td>Anti-bot detection</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td><code>user_agent</code></td>
+            <td>Text</td>
+            <td>Browser fingerprint</td>
+            <td>Yes</td>
+        </tr>
+        <tr>
+            <td><code>status</code></td>
+            <td>Text</td>
+            <td>Always "active"</td>
+            <td>No</td>
+        </tr>
     </table>
-    
+
     <div class="callout">
-        <strong>⚠️ IMPORTANT:</strong> We do <strong>NOT</strong> store the user's email address. The email is encrypted by iExec and stored on-chain inside a Trusted Execution Environment (TEE). Only the Web3Mail application can access it — and only with the user's explicit permission.
+        <strong>⚠️ IMPORTANT:</strong> We do <strong>NOT</strong> store the user's email address. The email is encrypted
+        by iExec and stored on-chain inside a Trusted Execution Environment (TEE). Only the Web3Mail application can
+        access it — and only with the user's explicit permission.
     </div>
-    
+
     <h3>3.2 On-Chain Data (iExec / Arbitrum One)</h3>
     <table>
-        <tr><th>Data</th><th>Where</th><th>Who Controls It</th></tr>
-        <tr><td>Encrypted email</td><td>iExec TEE (on-chain NFT)</td><td>User (owner)</td></tr>
-        <tr><td>Access permissions</td><td>iExec Smart Contract</td><td>User (can revoke anytime)</td></tr>
-        <tr><td>RLC deposit</td><td>iExec Account Contract</td><td>User (can withdraw)</td></tr>
+        <tr>
+            <th>Data</th>
+            <th>Where</th>
+            <th>Who Controls It</th>
+        </tr>
+        <tr>
+            <td>Encrypted email</td>
+            <td>iExec TEE (on-chain NFT)</td>
+            <td>User (owner)</td>
+        </tr>
+        <tr>
+            <td>Access permissions</td>
+            <td>iExec Smart Contract</td>
+            <td>User (can revoke anytime)</td>
+        </tr>
+        <tr>
+            <td>RLC deposit</td>
+            <td>iExec Account Contract</td>
+            <td>User (can withdraw)</td>
+        </tr>
     </table>
-    
+
     <hr>
-    
+
     <h2>4. Security Architecture</h2>
-    
+
     <div class="mermaid">
-graph TB
-    subgraph UserBrowser["User's Browser"]
+        graph TB
+        subgraph UserBrowser["User's Browser"]
         A["MetaMask Wallet - Private Keys"]
-    end
-    subgraph iExecProtocol["iExec Protocol - On-Chain"]
+        end
+        subgraph iExecProtocol["iExec Protocol - On-Chain"]
         B["DataProtector - Encryption"]
         C["TEE Enclave - Intel SGX"]
         D["Web3Mail App - Email Sender"]
-    end
-    subgraph QuintesInfra["Quintes Infrastructure"]
+        end
+        subgraph QuintesInfra["Quintes Infrastructure"]
         E["Next.js Frontend - Vercel"]
         F["Supabase Database - PostgreSQL"]
         G["Admin Dashboard - Auth Protected"]
-    end
-    A -->|Signs transactions| E
-    E -->|SDK calls| B
-    B -->|Encrypts data| C
-    C -->|Sends email| D
-    E -->|Saves metadata| F
-    F -->|Read-only| G
+        end
+        A -->|Signs transactions| E
+        E -->|SDK calls| B
+        B -->|Encrypts data| C
+        C -->|Sends email| D
+        E -->|Saves metadata| F
+        F -->|Read-only| G
     </div>
-    
+
     <h3>Security Guarantees</h3>
     <table>
-        <tr><th>Threat</th><th>Protection</th><th>Status</th></tr>
-        <tr><td>Email exposure</td><td>Encrypted in TEE, never visible to Quintes</td><td class="check">✅</td></tr>
-        <tr><td>Database breach</td><td>No email stored — only wallet address and metadata</td><td class="check">✅</td></tr>
-        <tr><td>Unauthorized reads</td><td>Row Level Security — only authenticated admin can READ</td><td class="check">✅</td></tr>
-        <tr><td>Bot registrations</td><td>IP + User Agent captured, wallet signature required</td><td class="check">✅</td></tr>
-        <tr><td>Replay attacks</td><td>Each protectedData is a unique on-chain NFT</td><td class="check">✅</td></tr>
-        <tr><td>Admin access</td><td>Supabase Auth with email/password login</td><td class="check">✅</td></tr>
+        <tr>
+            <th>Threat</th>
+            <th>Protection</th>
+            <th>Status</th>
+        </tr>
+        <tr>
+            <td>Email exposure</td>
+            <td>Encrypted in TEE, never visible to Quintes</td>
+            <td class="check">✅</td>
+        </tr>
+        <tr>
+            <td>Database breach</td>
+            <td>No email stored — only wallet address and metadata</td>
+            <td class="check">✅</td>
+        </tr>
+        <tr>
+            <td>Unauthorized reads</td>
+            <td>Row Level Security — only authenticated admin can READ</td>
+            <td class="check">✅</td>
+        </tr>
+        <tr>
+            <td>Bot registrations</td>
+            <td>IP + User Agent captured, wallet signature required</td>
+            <td class="check">✅</td>
+        </tr>
+        <tr>
+            <td>Replay attacks</td>
+            <td>Each protectedData is a unique on-chain NFT</td>
+            <td class="check">✅</td>
+        </tr>
+        <tr>
+            <td>Admin access</td>
+            <td>Supabase Auth with email/password login</td>
+            <td class="check">✅</td>
+        </tr>
     </table>
-    
+
     <hr>
-    
+
     <h2>5. Admin Dashboard</h2>
     <p>Accessible at <code>/admin/dashboard</code> (requires Supabase authentication).</p>
-    
+
     <h3>Features:</h3>
     <ul>
         <li><strong>Total registered users</strong> count</li>
@@ -274,86 +439,164 @@ graph TB
         <li><strong>Recent signups</strong> table with wallet addresses, referral codes, and timestamps</li>
         <li><strong>Status</strong> filter (active/inactive)</li>
     </ul>
-    
+
     <h3>Access:</h3>
     <ul>
         <li>Login at <code>/admin/login</code> with admin credentials</li>
         <li>Only authenticated users can read data (RLS policy)</li>
         <li>Anyone can INSERT (public whitelist registration)</li>
     </ul>
-    
+
     <hr>
-    
+
     <h2>6. Technology Stack</h2>
-    
+
     <div class="mermaid">
-graph LR
-    subgraph Frontend
+        graph LR
+        subgraph Frontend
         A["Next.js 16"]
         B["React"]
         C["TailwindCSS"]
-    end
-    subgraph Blockchain
+        end
+        subgraph Blockchain
         D["Arbitrum One"]
         E["iExec DataProtector"]
         F["iExec Web3Mail"]
-    end
-    subgraph Backend
+        end
+        subgraph Backend
         G["Supabase - PostgreSQL + Auth"]
         H["Vercel - Hosting"]
-    end
-    A --> D
-    A --> G
-    A --> H
-    D --> E
-    E --> F
+        end
+        A --> D
+        A --> G
+        A --> H
+        D --> E
+        E --> F
     </div>
-    
+
     <table>
-        <tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr>
-        <tr><td>Frontend</td><td>Next.js 16.1 + React</td><td>User interface</td></tr>
-        <tr><td>Styling</td><td>TailwindCSS</td><td>Responsive design</td></tr>
-        <tr><td>Blockchain</td><td>Arbitrum One (Chain 42161)</td><td>Fast, low-cost L2</td></tr>
-        <tr><td>Data Privacy</td><td>iExec DataProtector + Web3Mail</td><td>Email encryption & sending</td></tr>
-        <tr><td>Database</td><td>Supabase (PostgreSQL)</td><td>Metadata storage</td></tr>
-        <tr><td>Auth</td><td>Supabase Auth</td><td>Admin dashboard access</td></tr>
-        <tr><td>Hosting</td><td>Vercel</td><td>CDN + serverless</td></tr>
-        <tr><td>Wallet</td><td>MetaMask (EIP-6963)</td><td>User authentication</td></tr>
+        <tr>
+            <th>Layer</th>
+            <th>Technology</th>
+            <th>Purpose</th>
+        </tr>
+        <tr>
+            <td>Frontend</td>
+            <td>Next.js 16.1 + React</td>
+            <td>User interface</td>
+        </tr>
+        <tr>
+            <td>Styling</td>
+            <td>TailwindCSS</td>
+            <td>Responsive design</td>
+        </tr>
+        <tr>
+            <td>Blockchain</td>
+            <td>Arbitrum One (Chain 42161)</td>
+            <td>Fast, low-cost L2</td>
+        </tr>
+        <tr>
+            <td>Data Privacy</td>
+            <td>iExec DataProtector + Web3Mail</td>
+            <td>Email encryption & sending</td>
+        </tr>
+        <tr>
+            <td>Database</td>
+            <td>Supabase (PostgreSQL)</td>
+            <td>Metadata storage</td>
+        </tr>
+        <tr>
+            <td>Auth</td>
+            <td>Supabase Auth</td>
+            <td>Admin dashboard access</td>
+        </tr>
+        <tr>
+            <td>Hosting</td>
+            <td>Vercel</td>
+            <td>CDN + serverless</td>
+        </tr>
+        <tr>
+            <td>Wallet</td>
+            <td>MetaMask (EIP-6963)</td>
+            <td>User authentication</td>
+        </tr>
     </table>
-    
+
     <hr>
-    
+
     <h2>7. Cost per Registration</h2>
     <table>
-        <tr><th>Item</th><th>Cost</th><th>Currency</th></tr>
-        <tr><td>Gas fees (Steps 1-3)</td><td>~$0.05</td><td>ETH</td></tr>
-        <tr><td>iExec workerpool fee</td><td>~$0.05</td><td>RLC</td></tr>
-        <tr><td>iExec deposit</td><td>0.15 RLC (~$0.06)</td><td>RLC</td></tr>
-        <tr><td>Supabase</td><td>Free tier</td><td>—</td></tr>
-        <tr><td>Vercel hosting</td><td>Free tier</td><td>—</td></tr>
-        <tr style="font-weight:600;background:#e8f5e9"><td>Total per user</td><td>~$0.16</td><td></td></tr>
+        <tr>
+            <th>Item</th>
+            <th>Cost</th>
+            <th>Currency</th>
+        </tr>
+        <tr>
+            <td>Gas fees (Steps 1-3)</td>
+            <td>~$0.05</td>
+            <td>ETH</td>
+        </tr>
+        <tr>
+            <td>iExec workerpool fee</td>
+            <td>~$0.05</td>
+            <td>RLC</td>
+        </tr>
+        <tr>
+            <td>iExec deposit</td>
+            <td>0.15 RLC (~$0.06)</td>
+            <td>RLC</td>
+        </tr>
+        <tr>
+            <td>Supabase</td>
+            <td>Free tier</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td>Vercel hosting</td>
+            <td>Free tier</td>
+            <td>—</td>
+        </tr>
+        <tr style="font-weight:600;background:#e8f5e9">
+            <td>Total per user</td>
+            <td>~$0.16</td>
+            <td></td>
+        </tr>
     </table>
-    
+
     <hr>
-    
+
     <h2>8. Environment Variables (Vercel)</h2>
     <table>
-        <tr><th>Variable</th><th>Required</th></tr>
-        <tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code></td><td class="check">✅</td></tr>
-        <tr><td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td><td class="check">✅</td></tr>
-        <tr><td><code>NEXT_PUBLIC_CHAIN_ID</code></td><td class="check">✅</td></tr>
+        <tr>
+            <th>Variable</th>
+            <th>Required</th>
+        </tr>
+        <tr>
+            <td><code>NEXT_PUBLIC_SUPABASE_URL</code></td>
+            <td class="check">✅</td>
+        </tr>
+        <tr>
+            <td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td>
+            <td class="check">✅</td>
+        </tr>
+        <tr>
+            <td><code>NEXT_PUBLIC_CHAIN_ID</code></td>
+            <td class="check">✅</td>
+        </tr>
     </table>
-    
+
     <div class="callout info">
-        <strong>ℹ️ NOTE:</strong> All configuration is client-side (<code>NEXT_PUBLIC_</code> prefix). No server-side secrets are needed because the user's MetaMask wallet handles all iExec transactions directly.
+        <strong>ℹ️ NOTE:</strong> All configuration is client-side (<code>NEXT_PUBLIC_</code> prefix). No server-side
+        secrets are needed because the user's MetaMask wallet handles all iExec transactions directly.
     </div>
 
     <script>
-        mermaid.initialize({ 
-            startOnLoad: true, 
+        mermaid.initialize({
+            startOnLoad: true,
             theme: 'default',
             securityLevel: 'loose'
         });
     </script>
 </body>
+
 </html>

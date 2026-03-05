@@ -1,23 +1,17 @@
 /**
  * =====================================================================
- * DEPRECATED: Sponsor Client - Gasless Mode
+ * Sponsor Client - JIT (Just-In-Time) Gasless Funder
  * =====================================================================
- * 
- * STATUS: INACTIVE (User Pays Gas mode is active)
- * 
- * This module was used for the gasless/sponsor flow where a backend wallet
- * paid gas on behalf of users.
- * 
- * Current flow: Users pay their own gas fees in xRLC on iExec Bellecour.
- * Gas costs on Bellecour are extremely low (~$0.00001 per transaction).
- * 
- * TO RE-ENABLE:
- * 1. Uncomment the import in whitelist-section.tsx
- * 2. Uncomment the sponsorship call in joinVerifiedWhitelist
- * 3. Configure SPONSOR_PRIVATE_KEY in Vercel
- * 4. Fund the sponsor wallet with xRLC
- * 
- * @deprecated User Pays Gas mode is now active
+ *
+ * STATUS: ACTIVE
+ *
+ * Calls the backend Sponsor API to fund the user's wallet with micro-amounts
+ * of ETH (for Arbitrum gas) and RLC (for iExec fees) before they execute
+ * the iExec DataProtector/Web3Mail transaction flow.
+ *
+ * This makes the experience 100% free for the user while keeping the
+ * full security of iExec's local EOA-based encryption.
+ *
  * =====================================================================
  */
 
@@ -26,43 +20,51 @@ const SPONSOR_API_URL = '/api/whitelist/sponsor';
 export interface SponsorResult {
     success: boolean;
     message?: string;
-    txHash?: string;
+    funded?: { eth: string; rlc: string };
+    txHashes?: { eth: string | null; rlc: string | null };
     error?: string;
 }
 
 /**
- * Requests the backend to sponsor (fund) the user's wallet with xRLC for gas.
- * This effectively makes the transaction "gasless" for the user.
- * 
- * @deprecated Currently not in use - User Pays Gas mode active
+ * Requests the backend to fund the user's wallet with ETH and RLC (JIT).
+ * This is the secure, anti-bot protected gateway to gasless iExec transactions.
  */
 export async function requestSponsoredWhitelist(
-    email: string,
     userAddress: string
 ): Promise<SponsorResult> {
     try {
         const response = await fetch(SPONSOR_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, userAddress })
+            body: JSON.stringify({ userAddress })
         });
 
         const data = await response.json();
 
-        if (!response.ok) {
+        if (!response.ok && response.status !== 429) {
+            // 429 = already sponsored (not a failure, continue the flow)
+            console.warn('[Sponsor] API error:', data.error);
             return {
                 success: false,
                 error: data.error || 'Failed to request sponsorship'
             };
         }
 
+        if (response.status === 429) {
+            // User was already sponsored recently — that's fine, they have funds
+            console.info('[Sponsor] Already sponsored, proceeding with existing funds');
+            return { success: true, message: 'Using existing funds' };
+        }
+
         return {
             success: true,
             message: data.message,
-            txHash: data.txHash
+            funded: data.funded,
+            txHashes: data.txHashes,
         };
     } catch (error) {
-        console.error('Sponsorship request failed:', error);
+        console.error('[Sponsor] Network error:', error);
+        // Non-fatal: the user might have their own funds
         return {
             success: false,
             error: 'Network error requesting sponsorship'

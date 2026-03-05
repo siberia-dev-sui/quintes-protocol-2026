@@ -7,9 +7,7 @@ import { Button } from "./ui/button";
 import { WalletModal } from "./wallet-modal";
 import { generateReferralCode } from "@/lib/referral";
 import { logger, sanitizeForLog } from "@/utils/logger";
-// PRESERVED: Sponsorship module (commented out - User Pays Gas mode active)
-// To re-enable gasless mode, uncomment this import and the call in joinVerifiedWhitelist
-// import { requestSponsoredWhitelist } from "@/lib/gasless/sponsor-client";
+// Note: iExec SDK imports have been removed — all iExec operations now run server-side
 
 // =============================================================================
 // IEXEC NETWORK CONFIGURATION (Hybrid: Mainnet & Testnet)
@@ -482,130 +480,41 @@ export function WhitelistSection() {
             }
 
             // =====================================================================
-            // PRESERVED: SPONSORSHIP CODE (Commented - User Pays Gas mode active)
-            // To re-enable gasless mode, uncomment below and the import at top
+            // SERVER-SIDE iExec EXECUTION (Zero MetaMask Popups)
+            // The backend handles ALL iExec operations:
+            //   protectData → grantAccess → deposit → sendEmail
+            // User signs NOTHING. Server wallet pays all gas + RLC fees.
             // =====================================================================
-            /*
-            // ATTEMPT SPONSORSHIP (Subsidy)
-            // Try to get gas from backend before proceeding
-            setSubmitStatus("Requesting gas subsidy...");
-            try {
-                const sponsorResult = await requestSponsoredWhitelist(proEmail, walletAddress);
-                if (sponsorResult.success) {
-                    toast.success("Gas Subsidy Applied", { description: "Quintes covered your transaction fees." });
-                } else {
-                    console.warn("Sponsorship failed:", sponsorResult.error);
-                    // Continue anyway, user might have their own gas
-                }
-            } catch (err) {
-                console.warn("Sponsorship request error", err);
-            }
-            */
-
-            // Initialize iExec SDKs (uses user's wallet)
-            setSubmitStatus("Connecting to iExec...");
-            const dataProtector = await initializeDataProtector(provider);
-            const web3mail = await initializeWeb3Mail(provider);
-
-            // STEP 1: Protect Email (User signs TX #1)
             setCurrentStep(1);
-            setSubmitStatus("Sign in MetaMask to encrypt your email");
-            const protectedData = await dataProtector.protectData({
-                data: { email: proEmail },
-                name: `Quintes Whitelist - ${walletAddress.slice(0, 8)}`
+            setSubmitStatus("Processing your registration...");
+
+            const iexecResponse = await fetch('/api/whitelist/iexec-execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: proEmail, walletAddress }),
             });
-            logger.info("Email protected:", protectedData.address);
 
-            // STEP 2: Grant Access to Web3Mail App (User signs TX #2)
-            // NOTE: When using Web3Mail whitelist, authorizedUser must be zero address
-            // The whitelist contract handles authorization internally
-            setCurrentStep(2);
-            setSubmitStatus("Sign to grant Web3Mail access");
-            await dataProtector.grantAccess({
-                protectedData: protectedData.address,
-                authorizedApp: WEB3MAIL_APP_WHITELIST, // iExec Web3Mail whitelist
-                authorizedUser: '0x0000000000000000000000000000000000000000', // Zero address for whitelist
-                numberOfAccess: 1000 // Allow multiple emails to be sent
-            });
-            logger.info("Access granted to Web3Mail whitelist");
+            const iexecResult = await iexecResponse.json();
 
-            // STEP 2.5: Deposit RLC into iExec Account (REQUIRED before sendEmail)
-            // iExec requires RLC to be deposited into the on-chain account contract,
-            // not just held in the wallet. Without this, the marketplace rejects tasks.
-            setCurrentStep(3);
-            setSubmitStatus("Checking iExec account balance...");
-            try {
-                const { IExec } = await import('iexec');
-                const iexec = new IExec({ ethProvider: provider });
-
-                // Check current account balance
-                const account = await iexec.account.checkBalance(walletAddress);
-                const currentStake = BigInt(account.stake.toString());
-                const requiredStake = BigInt(150000000); // 0.15 RLC (covers workerpool + margin)
-
-                logger.info(`iExec account stake: ${currentStake.toString()} nRLC`);
-
-                if (currentStake < requiredStake) {
-                    const depositAmount = requiredStake - currentStake;
-                    setSubmitStatus("💰 Depositing RLC to iExec account (sign TX)...");
-                    await iexec.account.deposit(depositAmount.toString());
-                    logger.info(`Deposited ${depositAmount.toString()} nRLC into iExec account`);
-                } else {
-                    logger.info("iExec account already has sufficient funds");
-                }
-            } catch (depositError) {
-                logger.error("iExec deposit error:", depositError);
-                // Try to continue anyway - maybe the deposit isn't needed
+            if (!iexecResponse.ok || !iexecResult.success) {
+                throw new Error(iexecResult.error || 'Server-side iExec execution failed');
             }
 
-            // STEP 3: Send Confirmation Email (User signs TX #3)
-            setCurrentStep(4);
-            setSubmitStatus("Sign to send your welcome email");
-            await web3mail.sendEmail({
-                protectedData: protectedData.address,
-                emailSubject: "Welcome to Quintes Protocol Whitelist",
-                emailContent: `
-                    <html>
-                        <body style="font-family: Arial, sans-serif; background: #000; color: #fff; padding: 40px;">
-                            <div style="max-width: 600px; margin: 0 auto;">
-                                <h1 style="color: #FFC700; font-size: 32px;">🎉 Welcome to Quintes Protocol!</h1>
-                                <p style="font-size: 18px; line-height: 1.6;">
-                                    Congratulations! Your spot on the Quintes Protocol whitelist is secured.
-                                </p>
-                                <p style="font-size: 16px; line-height: 1.6;">
-                                    You're now among the first to experience institutional-grade DeFi yields.
-                                </p>
-                                <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; margin: 30px 0; border: 2px solid #FFC700;">
-                                    <p style="margin: 0; font-size: 14px; color: #FFC700;"><strong>What's Next?</strong></p>
-                                    <p style="margin: 10px 0 0 0; font-size: 14px;">We'll keep you updated on our launch. Stay tuned!</p>
-                                </div>
-                                <p style="font-size: 12px; color: #888;">
-                                    Sent via Web3 Mail - decentralized, encrypted, and secure.
-                                </p>
-                            </div>
-                        </body>
-                    </html>
-                `,
-                contentType: "text/html",
-                senderName: "Quintes Protocol",
-                workerpoolMaxPrice: 100000000, // 0.1 RLC max for workerpool (in nRLC)
-            });
-            logger.info("Email sent successfully");
-
-            // STEP 4: Save to Backend API (Data Persistence Fix)
+            logger.info("Server-side iExec complete:", iexecResult.protectedDataAddress);
+            setCurrentStep(2);
             setSubmitStatus("Saving your profile...");
+
+            // Save to database
             const refCode = generateReferralCode();
             const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : null;
 
             try {
                 const response = await fetch('/api/whitelist/save', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         wallet_address: walletAddress,
-                        protected_data_address: protectedData.address,
+                        protected_data_address: iexecResult.protectedDataAddress,
                         referral_code: refCode,
                         user_agent: userAgent
                     })
@@ -618,8 +527,6 @@ export function WhitelistSection() {
                 }
             } catch (dbError) {
                 logger.error("DB Error (non-fatal):", dbError);
-                // Don't fail the whole flow, blockchain part succeeded
-                // But DO notify the user so we know about it
                 toast.warning("Profile saved on blockchain, but database sync had an issue.", {
                     description: "Your whitelist spot is secured. We'll sync your profile shortly."
                 });
@@ -631,29 +538,15 @@ export function WhitelistSection() {
             toast.success("You're in!", { description: `Your referral code: ${refCode}` });
 
         } catch (error: unknown) {
-            logger.error("iExec Whitelist Error:", error);
+            logger.error("Whitelist Error:", error);
             const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
-            // Handle specific error cases with user-friendly messages
-            if (errorMessage.includes("user rejected") || errorMessage.includes("User denied")) {
-                toast.error("Transaction Cancelled", {
-                    description: "You rejected the transaction in your wallet."
-                });
-            } else if (errorMessage.includes("insufficient funds") || errorMessage.includes("gas")) {
-                toast.error("Insufficient Funds", {
-                    description: `You need ETH on ${CURRENT_CONFIG.chainName} to pay for gas, plus RLC for iExec services.`,
-                    action: {
-                        label: "Get RLC",
-                        onClick: () => window.open("https://app.uniswap.org/explore/tokens/arbitrum/0xe649e6a1f2afc63ca268c2363691cecaf75cf47c", "_blank")
-                    }
-                });
-            } else {
-                toast.error("Registration failed", {
-                    description: errorMessage
-                });
-            }
+            toast.error("Registration failed", {
+                description: errorMessage
+            });
             setSubmitStatus("");
             setCurrentStep(0);
+
         } finally {
             setIsSubmitting(false);
         }
