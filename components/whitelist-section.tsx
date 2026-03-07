@@ -823,7 +823,7 @@ export function WhitelistSection() {
 // Wrapper with Suspense for Next.js static build compatibility
 export function WhitelistSectionWrapper() {
     return (
-        <Suspense fallback={<div className="py-32 text-center font-mono text-foreground/40">Cargando whitelist...</div>}>
+        <Suspense fallback={<div className="py-32 text-center font-mono text-foreground/40">Loading whitelist...</div>}>
             <WhitelistSection />
         </Suspense>
     );

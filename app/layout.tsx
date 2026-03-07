@@ -31,7 +31,6 @@ export const metadata: Metadata = {
   },
   keywords: ["DeFi", "Yield", "Crypto", "BTC", "ETH", "Stablecoins", "QNT", "Staking", "Shariah-compliant", "Overcollateralized"],
   authors: [{ name: "Quintes Protocol" }],
-  generator: 'v0.app'
 };
 
 export const viewport = {
