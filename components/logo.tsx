@@ -9,7 +9,7 @@ export const Logo = ({ className }: LogoProps) => {
     <img
       src="https://pub-731cbf0e109a4a5fbffae6de248ddd3a.r2.dev/Concept%201%20Logo%20-%20Dark.svg"
       alt="Quintes Logo"
-      className={className}
+      className={`${className} invert brightness-0 hover:opacity-80 transition-opacity`}
     />
   );
 };
