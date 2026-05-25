@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import { Button } from "./ui/button";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
@@ -206,13 +207,11 @@ export function ArticlesSection() {
 
                 {/* View All Button */}
                 <div className="flex justify-center mt-10">
-                    <Link
-                        href="https://paragraph.xyz/@quintes"
-                        target="_blank"
-                        className="inline-flex items-center px-8 py-3 rounded-lg font-mono font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                    >
-                        View All Articles on Paragraph
-                    </Link>
+                    <Button asChild size="sm">
+                        <Link href="https://paragraph.xyz/@quintes" target="_blank">
+                            View All Articles on Paragraph
+                        </Link>
+                    </Button>
                 </div>
             </div>
 
