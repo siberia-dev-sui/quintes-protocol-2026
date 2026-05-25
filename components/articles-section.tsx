@@ -111,28 +111,15 @@ export function ArticlesSection() {
             <div className="container mx-auto px-6">
                 {/* Badge */}
                 <div className="text-center mb-8">
-                    {isDark ? (
-                        <span className="badge-cyan">From Our Blog</span>
-                    ) : (
-                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/60 bg-primary/10 text-primary text-xs font-mono font-bold">
-                            From Our Blog
-                        </span>
-                    )}
+                    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/60 bg-primary/10 text-primary text-xs font-mono font-bold">
+                        From Our Blog
+                    </span>
                 </div>
 
                 {/* Title */}
                 <h2 className="text-4xl md:text-5xl font-sentient text-center mb-12">
-                    {isDark ? (
-                        <>
-                            <span className="gradient-text">Deep Dive Into </span>
-                            <span className="text-[#00E0FF]">Quintes</span>
-                        </>
-                    ) : (
-                        <>
-                            <span className="text-foreground">Deep Dive Into </span>
-                            <span className="text-primary">Quintes</span>
-                        </>
-                    )}
+                    <span className="text-foreground/80">Deep Dive Into </span>
+                    <span className="text-primary">Quintes</span>
                 </h2>
 
                 {/* Articles Grid */}
@@ -144,7 +131,7 @@ export function ArticlesSection() {
                             target="_blank"
                             className={
                                 isDark
-                                    ? "glass rounded-2xl overflow-hidden hover:border-[#00E0FF]/40 hover:shadow-[0_0_30px_rgba(0,224,255,0.15)] hover:-translate-y-1 transition-all duration-300 flex flex-col"
+                                    ? "glass rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-[0_0_24px_rgba(255,199,0,0.12)] hover:-translate-y-1 transition-all duration-300 flex flex-col"
                                     : "bg-white border border-foreground/10 shadow-sm rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col"
                             }
                         >
@@ -203,7 +190,7 @@ export function ArticlesSection() {
                                 <div
                                     className={
                                         isDark
-                                            ? "flex items-center gap-2 mt-4 text-[#00E0FF] text-sm"
+                                            ? "flex items-center gap-2 mt-4 text-primary text-sm"
                                             : "flex items-center gap-2 mt-4 text-primary text-sm"
                                     }
                                 >
@@ -219,23 +206,13 @@ export function ArticlesSection() {
 
                 {/* View All Button */}
                 <div className="flex justify-center mt-10">
-                    {isDark ? (
-                        <Link
-                            href="https://paragraph.xyz/@quintes"
-                            target="_blank"
-                            className="btn-primary-cyan px-8 py-3 rounded-lg font-mono font-bold text-sm"
-                        >
-                            View All Articles on Paragraph
-                        </Link>
-                    ) : (
-                        <Link
-                            href="https://paragraph.xyz/@quintes"
-                            target="_blank"
-                            className="inline-flex items-center px-8 py-3 rounded-lg font-mono font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                        >
-                            View All Articles on Paragraph
-                        </Link>
-                    )}
+                    <Link
+                        href="https://paragraph.xyz/@quintes"
+                        target="_blank"
+                        className="inline-flex items-center px-8 py-3 rounded-lg font-mono font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                    >
+                        View All Articles on Paragraph
+                    </Link>
                 </div>
             </div>
 
