@@ -15,11 +15,12 @@ export function Footer() {
     return (
         <footer className="py-12 px-6 border-t border-border">
             <div className="container mx-auto max-w-5xl">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-6">
+                <div className="flex flex-col gap-8">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-6">
                     <div className="flex items-center gap-3">
                         <Logo className="w-6 h-6" style={{ filter: logoFilter }} />
                         <span className="font-mono text-foreground/60 text-sm">
-                            © 2024 Quintes Protocol
+                            © {new Date().getFullYear()} Quintes Protocol
                         </span>
                     </div>
 
@@ -104,6 +105,14 @@ export function Footer() {
                             </svg>
                             Blog
                         </Link>
+                    </div>
+                </div>
+
+                    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t border-border/40 pt-6">
+                        <Link href="/about" className="font-mono text-xs text-foreground/40 hover:text-foreground/70 transition-colors">About</Link>
+                        <Link href="/privacy" className="font-mono text-xs text-foreground/40 hover:text-foreground/70 transition-colors">Privacy Policy</Link>
+                        <Link href="/terms" className="font-mono text-xs text-foreground/40 hover:text-foreground/70 transition-colors">Terms of Service</Link>
+                        <Link href="/legal" className="font-mono text-xs text-foreground/40 hover:text-foreground/70 transition-colors">Legal Disclaimer</Link>
                     </div>
                 </div>
             </div>

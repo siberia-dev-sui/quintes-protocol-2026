@@ -4,6 +4,7 @@ import { FeaturesSection } from "@/components/features-section";
 import { CollaboratorsCarousel } from "@/components/collaborators-carousel";
 import { AssetsSection } from "@/components/assets-section";
 import { FAQSection } from "@/components/faq-section";
+import { ArticlesSection } from "@/components/articles-section";
 import { WhitelistSectionWrapper } from "@/components/whitelist-section";
 import { Footer } from "@/components/footer";
 
@@ -16,6 +17,7 @@ export default function Home() {
       <AssetsSection />
       <CollaboratorsCarousel />
       <FAQSection />
+      <ArticlesSection />
       <WhitelistSectionWrapper />
       <Footer />
     </>
