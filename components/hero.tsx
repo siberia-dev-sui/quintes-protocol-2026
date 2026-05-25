@@ -4,7 +4,6 @@ import Link from "next/link";
 import { GL } from "./gl";
 import { Pill } from "./pill";
 import { Button } from "./ui/button";
-import { CopyDesignButton } from "./copy-design-button";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 
@@ -62,9 +61,6 @@ export function Hero() {
           Powered by Arbitrum
         </p>
 
-        <div className="mt-6 opacity-60 hover:opacity-100 transition-opacity duration-300">
-          <CopyDesignButton isDark={isDark} />
-        </div>
       </div>
 
       {/* Bottom gradient — dark mode only. Light mode: hero bg === page bg, no gradient needed */}
