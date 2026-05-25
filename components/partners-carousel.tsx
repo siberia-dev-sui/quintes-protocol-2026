@@ -8,7 +8,6 @@ const partners = [
     { name: "OKX Exchange", logo: "/logos/okx-premium.svg" },
     { name: "Arbitrum", logo: "https://pub-731cbf0e109a4a5fbffae6de248ddd3a.r2.dev/Gemini_Generated_Image_five1cfive1cfive.svg" },
     { name: "Optimism", logo: "/logos/optimism.svg" },
-    { name: "Republic", logo: "/logos/republic.svg" },
 ];
 
 export function PartnersCarousel() {
