@@ -1,4 +1,8 @@
+'use client';
+
 import Link from "next/link";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 
 const articles = [
@@ -46,42 +50,42 @@ const articles = [
     }
 ];
 
-function ArticleIcon({ type }: { type: string }) {
+function ArticleIcon({ type, className }: { type: string; className?: string }) {
     const icons: Record<string, ReactElement> = {
         users: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-10 h-10 opacity-50">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={`w-10 h-10 ${className ?? ""}`}>
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
         ),
         token: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-10 h-10 opacity-50">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={`w-10 h-10 ${className ?? ""}`}>
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 6v6l4 2" />
             </svg>
         ),
         layers: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-10 h-10 opacity-50">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={`w-10 h-10 ${className ?? ""}`}>
                 <path d="M12 2L2 7l10 5 10-5-10-5z" />
                 <path d="M2 17l10 5 10-5" />
                 <path d="M2 12l10 5 10-5" />
             </svg>
         ),
         help: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-10 h-10 opacity-50">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={`w-10 h-10 ${className ?? ""}`}>
                 <circle cx="12" cy="12" r="10" />
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                 <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
         ),
         chart: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-10 h-10 opacity-50">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={`w-10 h-10 ${className ?? ""}`}>
                 <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
             </svg>
         ),
         document: (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-10 h-10 opacity-50">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={`w-10 h-10 ${className ?? ""}`}>
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" />
@@ -93,18 +97,42 @@ function ArticleIcon({ type }: { type: string }) {
 }
 
 export function ArticlesSection() {
+    const { resolvedTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const isDark = !mounted || resolvedTheme !== "light";
+
     return (
         <section className="section-container">
             <div className="container mx-auto px-6">
                 {/* Badge */}
                 <div className="text-center mb-8">
-                    <span className="badge-cyan">From Our Blog</span>
+                    {isDark ? (
+                        <span className="badge-cyan">From Our Blog</span>
+                    ) : (
+                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/60 bg-primary/10 text-primary text-xs font-mono font-bold">
+                            From Our Blog
+                        </span>
+                    )}
                 </div>
 
                 {/* Title */}
                 <h2 className="text-4xl md:text-5xl font-sentient text-center mb-12">
-                    <span className="gradient-text">Deep Dive Into </span>
-                    <span className="text-[#00E0FF]">Quintes</span>
+                    {isDark ? (
+                        <>
+                            <span className="gradient-text">Deep Dive Into </span>
+                            <span className="text-[#00E0FF]">Quintes</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="text-foreground">Deep Dive Into </span>
+                            <span className="text-primary">Quintes</span>
+                        </>
+                    )}
                 </h2>
 
                 {/* Articles Grid */}
@@ -114,20 +142,71 @@ export function ArticlesSection() {
                             key={article.title}
                             href={article.href}
                             target="_blank"
-                            className="glass rounded-2xl overflow-hidden hover:border-[#00E0FF]/40 hover:shadow-[0_0_30px_rgba(0,224,255,0.15)] hover:-translate-y-1 transition-all duration-300 flex flex-col"
+                            className={
+                                isDark
+                                    ? "glass rounded-2xl overflow-hidden hover:border-[#00E0FF]/40 hover:shadow-[0_0_30px_rgba(0,224,255,0.15)] hover:-translate-y-1 transition-all duration-300 flex flex-col"
+                                    : "bg-white border border-foreground/10 shadow-sm rounded-2xl overflow-hidden hover:border-primary/40 hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col"
+                            }
                         >
                             {/* Placeholder Image */}
-                            <div className="h-44 bg-gradient-to-br from-neutral-900 to-neutral-800 flex items-center justify-center gap-3">
-                                <ArticleIcon type={article.icon} />
-                                <span className="text-white/25 text-xl font-semibold">QUINTES</span>
+                            <div
+                                className={
+                                    isDark
+                                        ? "h-44 bg-gradient-to-br from-neutral-900 to-neutral-800 flex items-center justify-center gap-3"
+                                        : "h-44 bg-gradient-to-br from-amber-50 to-stone-100 flex items-center justify-center gap-3"
+                                }
+                            >
+                                <ArticleIcon
+                                    type={article.icon}
+                                    className={isDark ? "text-white/40" : "text-foreground/25"}
+                                />
+                                <span
+                                    className={
+                                        isDark
+                                            ? "text-white/20 text-xl font-semibold"
+                                            : "text-foreground/[0.12] text-xl font-semibold"
+                                    }
+                                >
+                                    QUINTES
+                                </span>
                             </div>
 
                             {/* Content */}
                             <div className="p-6 flex-1 flex flex-col">
-                                <div className="text-white/50 text-xs mb-2">{article.date}</div>
-                                <h3 className="text-white font-semibold text-lg mb-3 line-clamp-2">{article.title}</h3>
-                                <p className="text-white/60 text-sm flex-1">{article.excerpt}</p>
-                                <div className="flex items-center gap-2 mt-4 text-[#00E0FF] text-sm">
+                                <div
+                                    className={
+                                        isDark
+                                            ? "text-white/50 text-xs mb-2"
+                                            : "text-foreground/50 text-xs mb-2"
+                                    }
+                                >
+                                    {article.date}
+                                </div>
+                                <h3
+                                    className={
+                                        isDark
+                                            ? "text-white font-semibold text-lg mb-3 line-clamp-2"
+                                            : "text-foreground font-semibold text-lg mb-3 line-clamp-2"
+                                    }
+                                >
+                                    {article.title}
+                                </h3>
+                                <p
+                                    className={
+                                        isDark
+                                            ? "text-white/60 text-sm flex-1"
+                                            : "text-foreground/60 text-sm flex-1"
+                                    }
+                                >
+                                    {article.excerpt}
+                                </p>
+                                <div
+                                    className={
+                                        isDark
+                                            ? "flex items-center gap-2 mt-4 text-[#00E0FF] text-sm"
+                                            : "flex items-center gap-2 mt-4 text-primary text-sm"
+                                    }
+                                >
                                     Read Article
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
                                         <path d="M5 12h14M12 5l7 7-7 7" />
@@ -140,18 +219,32 @@ export function ArticlesSection() {
 
                 {/* View All Button */}
                 <div className="flex justify-center mt-10">
-                    <Link
-                        href="https://paragraph.xyz/@quintes"
-                        target="_blank"
-                        className="btn-primary-cyan px-8 py-3 rounded-lg"
-                    >
-                        View All Articles on Paragraph
-                    </Link>
+                    {isDark ? (
+                        <Link
+                            href="https://paragraph.xyz/@quintes"
+                            target="_blank"
+                            className="btn-primary-cyan px-8 py-3 rounded-lg font-mono font-bold text-sm"
+                        >
+                            View All Articles on Paragraph
+                        </Link>
+                    ) : (
+                        <Link
+                            href="https://paragraph.xyz/@quintes"
+                            target="_blank"
+                            className="inline-flex items-center px-8 py-3 rounded-lg font-mono font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                        >
+                            View All Articles on Paragraph
+                        </Link>
+                    )}
                 </div>
             </div>
 
             {/* Decorative line */}
-            <div className="line-horizontal mt-20" />
+            {isDark ? (
+                <div className="line-horizontal mt-20" />
+            ) : (
+                <div className="mt-20 h-px bg-foreground/10" />
+            )}
         </section>
     );
 }
