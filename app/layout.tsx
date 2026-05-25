@@ -5,6 +5,9 @@ import "./globals.css";
 import { Header } from "@/components/header";
 import { Toaster } from "sonner";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { ThemeProvider } from "@/components/theme-provider";
+import { SmoothScroll } from "@/components/smooth-scroll";
+import { NoiseOverlay } from "@/components/noise-overlay";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -46,16 +49,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistMono.variable} antialiased overflow-x-hidden`}
         suppressHydrationWarning
       >
-        <Header />
-        <ErrorBoundary>
-          {children}
-        </ErrorBoundary>
-        <Toaster richColors position="bottom-right" />
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <NoiseOverlay />
+          <Header />
+          <SmoothScroll>
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+          </SmoothScroll>
+          <Toaster richColors position="bottom-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

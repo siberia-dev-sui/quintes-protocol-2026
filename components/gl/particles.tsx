@@ -3,6 +3,7 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { createPortal, useFrame } from "@react-three/fiber";
 import { useFBO } from "@react-three/drei";
 
+
 import { DofPointsMaterial } from "./shaders/pointMaterial";
 import { SimulationMaterial } from "./shaders/simulationMaterial";
 import * as easing from "maath/easing";
@@ -21,10 +22,11 @@ export function Particles({
   useManualTime = false,
   manualTime = 0,
   introspect = false,
+  particleColor,
+  isDark = true,
   ...props
 }: {
   speed: number;
-  // fov: number
   aperture: number;
   focus: number;
   size: number;
@@ -37,6 +39,8 @@ export function Particles({
   useManualTime?: boolean;
   manualTime?: number;
   introspect?: boolean;
+  particleColor?: THREE.Color;
+  isDark?: boolean;
 }) {
   // Reveal animation state
   const revealStartTime = useRef<number | null>(null);
@@ -61,6 +65,14 @@ export function Particles({
       simulationMaterial.uniforms.positions.value;
     return m;
   }, [simulationMaterial]);
+
+  // In light mode use MultiplyBlending: dark particles × light bg = visually dark and crisp.
+  // NormalBlending with semi-transparent dark on white = washed-out gray.
+  useEffect(() => {
+    dofPointsMaterial.blending = isDark ? THREE.NormalBlending : THREE.MultiplyBlending;
+    dofPointsMaterial.premultipliedAlpha = !isDark;
+    dofPointsMaterial.needsUpdate = true;
+  }, [isDark, dofPointsMaterial]);
 
   const [scene] = useState(() => new THREE.Scene());
   const [camera] = useState(
@@ -142,6 +154,9 @@ export function Particles({
     dofPointsMaterial.uniforms.uOpacity.value = opacity;
     dofPointsMaterial.uniforms.uRevealFactor.value = revealFactor;
     dofPointsMaterial.uniforms.uRevealProgress.value = easedProgress;
+    if (particleColor) {
+      dofPointsMaterial.uniforms.uParticleColor.value = particleColor;
+    }
   });
 
   return (

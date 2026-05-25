@@ -41,16 +41,16 @@ export function FeaturesSection() {
                     {features.map((feature, i) => (
                         <div
                             key={i}
-                            className="group p-6 bg-background border border-border hover:border-primary/50 transition-all duration-300 relative"
+                            className="feature-card group p-6 bg-background border border-primary/30 hover:border-primary/60 transition-all duration-300 relative"
                             style={{
                                 clipPath: "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)"
                             }}
                         >
                             {/* Corner accents */}
-                            <span className="absolute top-1 left-1 w-4 h-px bg-border group-hover:bg-primary/50 transition-colors -rotate-45 origin-left" />
-                            <span className="absolute top-1 right-1 w-4 h-px bg-border group-hover:bg-primary/50 transition-colors rotate-45 origin-right" />
-                            <span className="absolute bottom-1 left-1 w-4 h-px bg-border group-hover:bg-primary/50 transition-colors rotate-45 origin-left" />
-                            <span className="absolute bottom-1 right-1 w-4 h-px bg-border group-hover:bg-primary/50 transition-colors -rotate-45 origin-right" />
+                            <span className="absolute top-1 left-1 w-4 h-px bg-primary/30 group-hover:bg-primary/60 transition-colors -rotate-45 origin-left" />
+                            <span className="absolute top-1 right-1 w-4 h-px bg-primary/30 group-hover:bg-primary/60 transition-colors rotate-45 origin-right" />
+                            <span className="absolute bottom-1 left-1 w-4 h-px bg-primary/30 group-hover:bg-primary/60 transition-colors rotate-45 origin-left" />
+                            <span className="absolute bottom-1 right-1 w-4 h-px bg-primary/30 group-hover:bg-primary/60 transition-colors -rotate-45 origin-right" />
 
                             <div className="flex items-start gap-4">
                                 <span className="inline-block size-2 rounded-full bg-primary mt-2 shadow-glow shadow-primary/50 shrink-0" />

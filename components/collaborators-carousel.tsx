@@ -1,5 +1,8 @@
 "use client";
 
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
+
 // Collaborators - team background institutions
 const collaborators = [
     { name: "Chainlink", logo: "https://pub-731cbf0e109a4a5fbffae6de248ddd3a.r2.dev/chainlink_logo%201.svg" },
@@ -13,6 +16,15 @@ const collaborators = [
 ];
 
 export function CollaboratorsCarousel() {
+    const { resolvedTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+    const isLight = mounted && resolvedTheme === "light";
+    const logoFilter = isLight
+        ? "brightness(0)"
+        : "brightness(0) invert(1)";
+    const logoOpacity = isLight ? "opacity-70" : "opacity-50";
+
     return (
         <section className="relative">
             {/* Top border with integrated text */}
@@ -26,9 +38,9 @@ export function CollaboratorsCarousel() {
 
             {/* Carousel content */}
             <div className="py-7 relative border-b border-border overflow-hidden">
-                {/* Gradient overlays */}
-                <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-                <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+                {/* Gradient overlays — use oklch-compatible stops to avoid black interpolation bug */}
+                <div className="absolute left-0 top-0 bottom-0 w-32 z-10 pointer-events-none" style={{ background: "linear-gradient(to right, var(--background), transparent)" }} />
+                <div className="absolute right-0 top-0 bottom-0 w-32 z-10 pointer-events-none" style={{ background: "linear-gradient(to left, var(--background), transparent)" }} />
 
                 {/* Marquee Container - scrolling LEFT TO RIGHT (reverse direction) */}
                 <div className="marquee-container">
@@ -42,7 +54,8 @@ export function CollaboratorsCarousel() {
                                 <img
                                     src={collaborator.logo}
                                     alt={collaborator.name}
-                                    className="max-h-[42px] md:max-h-[54px] w-auto max-w-[135px] md:max-w-[162px] opacity-50 hover:opacity-100 transition-all duration-300 grayscale hover:grayscale-0 object-contain"
+                                    style={{ filter: logoFilter }}
+                                    className={`max-h-[42px] md:max-h-[54px] w-auto max-w-[135px] md:max-w-[162px] ${logoOpacity} hover:opacity-100 transition-all duration-300 object-contain`}
                                     onError={(e) => {
                                         // Fallback to text if image fails to load
                                         e.currentTarget.style.display = 'none';

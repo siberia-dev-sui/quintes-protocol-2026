@@ -27,7 +27,7 @@ export function AssetsSection() {
                     {assets.map((asset) => (
                         <div
                             key={asset.symbol}
-                            className="group px-8 py-6 bg-background border border-border hover:border-primary/50 transition-all duration-300"
+                            className="group px-8 py-6 bg-background border border-primary/30 hover:border-primary/60 transition-all duration-300"
                             style={{
                                 clipPath: "polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px)"
                             }}

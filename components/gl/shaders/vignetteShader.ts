@@ -1,8 +1,9 @@
 export const VignetteShader = {
   uniforms: {
-    tDiffuse: { value: null }, // provided by ShaderPass
-    darkness: { value: 1.0 }, // strength of the vignette effect
-    offset: { value: 1.0 }, // vignette offset
+    tDiffuse: { value: null },
+    darkness: { value: 1.0 },
+    offset: { value: 1.0 },
+    uLightMode: { value: 0.0 }, // 0 = dark (edges→black), 1 = light (edges→white)
   },
   vertexShader: /* glsl */`
     varying vec2 vUv;
@@ -15,19 +16,21 @@ export const VignetteShader = {
     uniform sampler2D tDiffuse;
     uniform float darkness;
     uniform float offset;
+    uniform float uLightMode;
     varying vec2 vUv;
-    
+
     void main() {
       vec4 texel = texture2D(tDiffuse, vUv);
-      
-      // Calculate distance from center
+
       vec2 uv = (vUv - 0.5) * 2.0;
       float dist = dot(uv, uv);
-      
-      // Create vignette effect
+
       float vignette = 1.0 - smoothstep(offset, offset + darkness, dist);
-      
-      gl_FragColor = vec4(texel.rgb * vignette, texel.a);
+
+      // Dark mode: edges fade to black (multiply).
+      // Light mode: edges fade to the bg color (white/cream) — no tunnel.
+      vec3 edgeColor = mix(vec3(0.0), vec3(0.941, 0.922, 0.878), uLightMode); // #f0ebe0
+      gl_FragColor = vec4(mix(edgeColor, texel.rgb, vignette), texel.a);
     }
   `
 };

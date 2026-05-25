@@ -2,10 +2,12 @@ import { Perf } from "r3f-perf";
 import { Effects } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { useControls } from "leva";
+import { useMemo } from "react";
+import * as THREE from "three";
 import { Particles } from "./particles";
 import { VignetteShader } from "./shaders/vignetteShader";
 
-export const GL = ({ hovering }: { hovering: boolean }) => {
+export const GL = ({ hovering, isDark = true }: { hovering: boolean; isDark?: boolean }) => {
   const {
     speed,
     focus,
@@ -41,20 +43,24 @@ export const GL = ({ hovering }: { hovering: boolean }) => {
     useManualTime: { value: false },
     manualTime: { value: 0, min: 0, max: 50, step: 0.01 },
   });
+
+  const bgColor = isDark ? "#000000" : "#f8f7f2";
+  const particleColor = useMemo(
+    () => isDark ? new THREE.Color(1, 1, 1) : new THREE.Color(0.08, 0.08, 0.08),
+    [isDark]
+  );
+
   return (
     <div id="webgl">
       <Canvas
         camera={{
-          position: [
-            1.2629783123314589, 2.664606471394044, -1.8178993743288914,
-          ],
+          position: [1.2629783123314589, 2.664606471394044, -1.8178993743288914],
           fov: 50,
           near: 0.01,
           far: 300,
         }}
       >
-        {/* <Perf position="top-left" /> */}
-        <color attach="background" args={["#000"]} />
+        <color attach="background" args={[bgColor]} />
         <Particles
           speed={speed}
           aperture={aperture}
@@ -69,14 +75,19 @@ export const GL = ({ hovering }: { hovering: boolean }) => {
           useManualTime={useManualTime}
           manualTime={manualTime}
           introspect={hovering}
+          particleColor={particleColor}
+          isDark={isDark}
         />
-        <Effects multisamping={0} disableGamma>
-          <shaderPass
-            args={[VignetteShader]}
-            uniforms-darkness-value={vignetteDarkness}
-            uniforms-offset-value={vignetteOffset}
-          />
-        </Effects>
+        {/* Vignette only in dark mode — in light mode it creates a black halo */}
+        {isDark && (
+          <Effects multisamping={0} disableGamma>
+            <shaderPass
+              args={[VignetteShader]}
+              uniforms-darkness-value={vignetteDarkness}
+              uniforms-offset-value={vignetteOffset}
+            />
+          </Effects>
+        )}
       </Canvas>
     </div>
   );

@@ -1,14 +1,23 @@
+"use client";
+
 import Link from "next/link";
 import { Logo } from "./logo";
 import { Book, Mail } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 export function Footer() {
+    const { resolvedTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+    const logoFilter = mounted && resolvedTheme === "light" ? "brightness(0)" : "brightness(0) invert(1)";
+
     return (
         <footer className="py-12 px-6 border-t border-border">
             <div className="container mx-auto max-w-5xl">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-6">
                     <div className="flex items-center gap-3">
-                        <Logo className="w-6 h-6" />
+                        <Logo className="w-6 h-6" style={{ filter: logoFilter }} />
                         <span className="font-mono text-foreground/60 text-sm">
                             © 2024 Quintes Protocol
                         </span>

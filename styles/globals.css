@@ -1,7 +1,5 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
-
-@custom-variant dark (&:is(.dark *));
+/* This file is NOT imported — kept for reference only.
+   All active styles are in app/globals.css */
 
 :root {
   --background: oklch(1 0 0);
